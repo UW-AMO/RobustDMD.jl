@@ -8,10 +8,18 @@ This repository contains an implementation of a robust
 version of the dynamic mode decomposition (DMD) in 
 julia. 
 
+## Install
+
+You can install this package with
+
+> Pkg.clone("https://github.com/UW-AMO/RobustDMD.jl.git")
+
+or a particular version by modifying the url.
+
 ## Requirements
 
-The examples require the Munkres package. Otherwise the 
-library is self-contained.
+The examples require the Munkres package and will work on 
+julia v0.5 and later. Otherwise the library is self-contained.
 
 > Pkg.add("Munkres")
 
