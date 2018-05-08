@@ -5,7 +5,6 @@
 #
 # Both l2 and huber penalties are demonstrated
 
-push!(LOAD_PATH, string(pwd(),"/../src/"))
 using RobustDMD
 
 #--------------------------------------------------------------------

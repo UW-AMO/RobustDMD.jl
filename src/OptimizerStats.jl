@@ -19,8 +19,8 @@ end
     
 function OptimizerStats(maxiter::Integer,ifstats::Bool)
     if ifstats
-        objs = Array(Float64,maxiter+1)
-        errs = Array(Float64,maxiter+1)
+        objs = Array{Float64}(maxiter+1)
+        errs = Array{Float64}(maxiter+1)
         noi = 0
         return OptimizerStats(objs,errs,noi,maxiter)
     else

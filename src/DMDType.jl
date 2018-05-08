@@ -20,7 +20,7 @@ end
 # construct function
 function DMDParams(k, h, X, t, lossf, lossg)
     m,n = size(X);
-    x   = Array(Array{Complex{Float64},1},n);
+    x   = Array{Array{Complex{Float64},1}}(n);
     p   = pointer(X);
     s   = sizeof(Complex{Float64});
     for j = 1:n
@@ -63,8 +63,8 @@ function DMDVariables(alpha, B, params::DMDParams)
     pr = convert(Ptr{Float64}, pc);
     alphar = unsafe_wrap(Array, pr, 2*k);
     # allocate b and br
-    b  = Array(Array{Complex{Float64},1}, n);
-    br = Array(Array{Float64,1}, n);
+    b  = Array{Array{Complex{Float64},1}}(n);
+    br = Array{Array{Float64,1}}(n);
     pc = pointer(B0);
     pr = convert(Ptr{Float64}, pc);
     sc = sizeof(Complex{Float64});
@@ -81,7 +81,7 @@ function DMDVariables(alpha, B, params::DMDParams)
     # update R = phi⋅B - X and r
     R  = copy(X);
     BLAS.gemm!('N','N',c1,phi,B0,-c1,R);
-    r  = Array(Array{Complex{Float64},1}, n);
+    r  = Array{Array{Complex{Float64},1}}(n);
     pc = pointer(R);
     for j = 1:n
         r[j] = unsafe_wrap(Array, pc, m);

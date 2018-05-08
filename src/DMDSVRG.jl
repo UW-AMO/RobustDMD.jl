@@ -57,7 +57,7 @@ function SVRG_solve_DMD!(vars, params, svars, options)
     # store all the gradient
     Gc  = zeros(vars.B);
     pg  = convert(Ptr{Float64}, pointer(Gc));
-    gr  = Array(Array{Float64,1}, n);
+    gr  = Array{Array{Float64,1}}(n);
     sr  = sizeof(Float64);
     for id = 1:n
         gr[id] = unsafe_wrap(Array, pg, 2*k);

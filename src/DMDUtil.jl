@@ -193,7 +193,7 @@ end
 # error measure
 function besterrperm(v1,v2)
     n = length(v1)
-    A = Array(typeof(abs(v1[1])),n,n)
+    A = Array{typeof(abs(v1[1]))}(n,n)
     for j = 1:n
         for i = 1:n
             A[i,j] = abs(v1[i]-v2[j])
@@ -214,7 +214,7 @@ end
 
 function besterrperm_wi(v1,v2)
     n = length(v1)
-    A = Array(typeof(abs(v1[1])),n,n)
+    A = Array{typeof(abs(v1[1]))}(n,n)
     for j = 1:n
         for i = 1:n
             A[i,j] = abs(v2[i]-v1[j])

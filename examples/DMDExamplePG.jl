@@ -6,7 +6,6 @@
 # We test the l2 penalty here (a more or less arbitrary choice)
 
 
-push!(LOAD_PATH, string(pwd(),"/../src/"))
 using RobustDMD
 
 # using PyPlot

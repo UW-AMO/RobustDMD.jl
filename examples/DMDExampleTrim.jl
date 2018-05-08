@@ -12,7 +12,6 @@
 # in order to keep e^(Re(alpha)*tmax) from being too large,
 # e.g. overflow may occur without such a choice
 
-push!(LOAD_PATH, string(pwd(),"/../src/"))
 using RobustDMD
 
 #--------------------------------------------------------------------
