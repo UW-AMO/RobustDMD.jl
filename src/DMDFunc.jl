@@ -14,7 +14,7 @@ function DMDObj(vars, params;
     updatephi && updatephimat!(vars.phi, params.t, vars.alpha);
     # update Residual
     updateR && updateResidual!(vars, params);
-    if (any(isnan(vars.R)) || any(isinf(vars.R)))
+    if (any(isnan,vars.R) || any(isinf,vars.R))
         return Inf
     end
     # calculate objetive value
@@ -29,7 +29,7 @@ function DMDObj_sub(vars, params, id;
     updatephi && updatephimat!(vars.phi, params.t, vars.alpha);
     # update Residual
     updateR && updateResidual_sub!(vars, params, id);
-    if (any(isnan(vars.r[id])) || any(isinf(vars.r[id])))
+    if (any(isnan,vars.r[id]) || any(isinf,vars.r[id]))
         return Inf
     end
     return params.lossf(vars.r[id])
@@ -42,7 +42,7 @@ function alphafunc(alphar, vars, params, svars)
     # update alpha related variables
     copy!(vars.alphar, alphar);
     updatephimat!(vars.phi, params.t, vars.alpha);
-    if (any(isnan(vars.phi)) || any(isinf(vars.phi)))
+    if (any(isnan,vars.phi) || any(isinf,vars.phi))
         return Inf
     end
     # variable projection, project b
