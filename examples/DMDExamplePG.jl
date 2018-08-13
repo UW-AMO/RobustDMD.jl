@@ -5,8 +5,9 @@
 #
 # We test the l2 penalty here (a more or less arbitrary choice)
 
-
 using RobustDMD
+
+T = Float32
 
 # using PyPlot
 #--------------------------------------------------------------------
@@ -19,9 +20,9 @@ n = 100;    # spatial dimension
 h = n; # h is not used by this solver (only Trim)
 k = 3;      # number of modes
 # generate data
-sigma = 1e-4; # size of background noise
-mu = 0.0; # size of spikes (set to zero here for l2 fitting example)
-p = 0.1; # frequency of spikes (percentage of corrupted entries)
+sigma = T(1e-4); # size of background noise
+mu = T(0.0); # size of spikes (set to zero here for l2 fitting example)
+p = T(0.1); # frequency of spikes (percentage of corrupted entries)
 X, Xclean, t, alphat, betat = genDMD(m, n, k, sigma, mu; seed=123456, p=p);
 
 #--------------------------------------------------------------------
@@ -38,7 +39,7 @@ println("Proximal Gradient l2 loss experiment...")
 # loss functions
 lossf = (z) -> l2_func(z);
 lossg = (z) -> l2_grad!(z);
-l2Params = DMDParams(k, h, X, t, lossf, lossg);
+l2Params = DMDParams(k, X, t, lossf, lossg);
 l2DMD = DMDVariables(alpha0, B0, l2Params);
 # wrapper: sets up inner solve specialized for l2
 l2Svars = DMDVPSolverVariablesLSQ(l2Params) 
@@ -47,10 +48,10 @@ l2Svars = DMDVPSolverVariablesLSQ(l2Params)
 function prox_mr(αr)
     k = length(αr) >> 1;
     for i = 1:k
-        αr[i<<1-1] = min(0.0, αr[i<<1-1]);
+        αr[i<<1-1] = min(T(0.0), αr[i<<1-1]);
     end
 end
-options = PG_options(1000,1e-6,true,true,10,prox_mr);
+options = PG_options(1000,T(1e-6),true,true,10,prox_mr);
 
 # apply solver
 stats = PG_solve_DMD!(l2DMD, l2Params, l2Svars, options);

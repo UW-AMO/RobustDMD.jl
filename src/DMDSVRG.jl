@@ -1,27 +1,31 @@
-#==========================================================
-    SVRG Solver for DMD
-==========================================================#
+# This file is available under the terms of the MIT License
+
+@doc """
+Outer solves by variance-reduced stochastic gradient descent 
+(SVRG). 
+"""
 
 using StatsBase
 
-type SVRG_options
-    itm::Int64
-    tol::Float64
-    batch_size::Int64
-    step_size::Float64
-    update_nu_every::Int64
-    update_obj_every::Int64
+mutable struct SVRG_options{T<:AbstractFloat}
+    itm::Integer
+    tol::T
+    batch_size::Integer
+    step_size::T
+    update_nu_every::Integer
+    update_obj_every::Integer
     ifstats::Bool
     show_his::Bool
-    print_frequency::Int64
+    print_frequency::Integer
     prox::Function
 end
 
-function SVRG_options(itm::Int64,tol::Float64,batch_size::Int64,
-                      step_size::Float64,update_nu_every::Int64,
-                      update_obj_every::Int64,ifstats::Bool,
+function SVRG_options{T<:AbstractFloat}(itm::Integer,
+                      tol::T,batch_size::Integer,
+                      step_size::T,update_nu_every::Integer,
+                      update_obj_every::Integer,ifstats::Bool,
                       show_his::Bool,
-                      print_frequency::Int64;
+                      print_frequency::Integer;
                       prox::Function = SVRGnullprox!)
     return SVRG_options(itm,tol,batch_size,step_size,update_nu_every,
                         update_obj_every,ifstats,show_his,print_frequency,prox)
@@ -31,7 +35,7 @@ function SVRGnullprox!(x)
     return
 end
 
-function SVRG_solve_DMD!(vars, params, svars, options)
+function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDParams{T}, svars::DMDVPSolverVariables, options::SVRG_options{T})
     # rename variables
     itm = options.itm;
     tol = options.tol;
@@ -50,15 +54,15 @@ function SVRG_solve_DMD!(vars, params, svars, options)
     # pre-allocated variables
     ind = collect(1:n);
     indtau = collect(1:tau);
-    sgr = zeros(2*k);
-    dgr = zeros(2*k);
+    sgr = zeros(T,2*k);
+    dgr = zeros(T,2*k);
     prox(vars.alphar)
     alphar_old = copy(vars.alphar);
     # store all the gradient
     Gc  = zeros(vars.B);
-    pg  = convert(Ptr{Float64}, pointer(Gc));
-    gr  = Array{Array{Float64,1}}(n);
-    sr  = sizeof(Float64);
+    pg  = convert(Ptr{T}, pointer(Gc));
+    gr  = Array{Array{T,1}}(n);
+    sr  = sizeof(T);
     for id = 1:n
         gr[id] = unsafe_wrap(Array, pg, 2*k);
         pg += sr*2*k;
@@ -67,17 +71,17 @@ function SVRG_solve_DMD!(vars, params, svars, options)
     VPSolver!(vars,params,svars)
     for id = 1:n
         alphagrad_sub!(gr[id], vars, params, id);
-        BLAS.axpy!(1.0,gr[id],sgr);
+        BLAS.axpy!(T(1.0),gr[id],sgr);
     end
     obj = DMDObj(vars, params; updatephi=true, updateR=true);
-    err = 1.0;
+    err = T(1.0);
     noi = 0;
     nu  = mu;
     updateOptimizerStats!(stats,obj,err,noi,ifstats)
     @show obj;
     for noi = 1:itm
         sample!(ind,indtau,replace=false);
-        fill!(dgr, 0.0);
+        fill!(dgr, T(0.0));
         
         # project out all for this subset
         VPSolver_subset!(vars,params,svars,indtau)
@@ -85,9 +89,9 @@ function SVRG_solve_DMD!(vars, params, svars, options)
         # remove old gradient for each index and add new
         for j = 1:tau
             id = indtau[j];
-            BLAS.axpy!(-1.0,gr[id],dgr);
+            BLAS.axpy!(T(-1.0),gr[id],dgr);
             alphagrad_sub!(gr[id], vars, params, id);
-            BLAS.axpy!( 1.0,gr[id],dgr);
+            BLAS.axpy!( T(1.0),gr[id],dgr);
         end
 
         # update α
@@ -106,14 +110,14 @@ function SVRG_solve_DMD!(vars, params, svars, options)
         # end
 
         ##### using diminishing step size #####
-        nu = mu/sqrt(div(noi,uf) + 1);
+        nu = mu/T(sqrt(div(noi,uf) + 1));
         err = vecnorm(vars.alphar - alphar_old);
 
         # @show nu
         copy!(alphar_old, vars.alphar);
 
         # update gradient
-        BLAS.axpy!(1.0, dgr, sgr);
+        BLAS.axpy!(T(1.0), dgr, sgr);
 
         # convergent history (this is a rough estimate)
         if (noi % of ==0)

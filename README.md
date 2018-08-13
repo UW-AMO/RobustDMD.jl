@@ -8,6 +8,17 @@ This repository contains an implementation of a robust
 version of the dynamic mode decomposition (DMD) in 
 julia. 
 
+## Changelog
+
+- Update August 13, 2018
+-- Minor change to interface of DMDParams
+-- Complex{Float32} is now supported in addition to
+Complex{Float64}. Eventually, all floating point types
+should be acceptable but that code will not be as efficient
+(the single and double precision versions are heavily
+BLAS dependent).
+-- Stylistic changes to be more julian
+
 ## Install
 
 You can install this package with

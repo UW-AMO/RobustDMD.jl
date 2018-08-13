@@ -12,44 +12,49 @@
     output:
 ====================================================================#
 
-type BFGS_options
-    itm::Int64
-    tol::Float64
+mutable struct BFGS_options{T<:AbstractFloat}
+    itm::Integer
+    tol::T
     ifstats::Bool
     warm_start::Bool    
     show_history::Bool
-    ptf::Int64
+    ptf::Integer
 end
 
-type BFGS_vars
-    x ::Array{Float64,1}
-    x⁺::Array{Float64,1}
-    g ::Array{Float64,1}
-    g⁺::Array{Float64,1}
-    p ::Array{Float64,1}
-    s ::Array{Float64,1}
-    y ::Array{Float64,1}
-    H ::Array{Float64,2}
+mutable struct BFGS_vars{T<:AbstractFloat}
+    x ::Array{T,1}
+    x⁺::Array{T,1}
+    g ::Array{T,1}
+    g⁺::Array{T,1}
+    p ::Array{T,1}
+    s ::Array{T,1}
+    y ::Array{T,1}
+    H ::Array{T,2}
 end
 
-function BFGS_vars(n::Int64;sigma::Float64=1e-6)
-    x = zeros(Float64,n);
-    x⁺ = zeros(Float64,n);
-    g = zeros(Float64,n);
-    g⁺ = zeros(Float64,n);
-    p = zeros(Float64,n);
-    s = zeros(Float64,n);
-    y = zeros(Float64,n);
+function BFGS_vars{T<:AbstractFloat}(n::Integer,alpha::T)
+    sigma = sqrt(eps(T))
+    x = zeros(T,n);
+    x⁺ = zeros(T,n);
+    g = zeros(T,n);
+    g⁺ = zeros(T,n);
+    p = zeros(T,n);
+    s = zeros(T,n);
+    y = zeros(T,n);
     H = diagm(fill(sigma,n));
     return BFGS_vars(x,x⁺,g,g⁺,p,s,y,H)
 end
+
+function BFGS_vars(n::Integer,T::Type=Float64)
+    return BFGS_vars(n,one(T))
+end
     
-function My_BFGS(func, grad!, x0, opts::BFGS_options, svars::BFGS_vars)
+function My_BFGS{T<:AbstractFloat}(func, grad!, x0::Array{T}, opts::BFGS_options, svars::BFGS_vars{T})
     itm = opts.itm;
     tol = opts.tol;
     ptf = opts.ptf;
     ifstats = opts.ifstats;
-    stats = OptimizerStats(itm,ifstats);
+    stats = OptimizerStats(itm,ifstats,T);
     show_history = opts.show_history;
     
     n   = length(x0);
@@ -75,7 +80,7 @@ function My_BFGS(func, grad!, x0, opts::BFGS_options, svars::BFGS_vars)
 
     while err ≥ tol
         # p = -H⋅g
-        BLAS.gemv!('N',-1.0,H,g,0.0,p);
+        BLAS.gemv!('N',T(-1.0),H,g,T(0.0),p);
         # line search with direction p
         flag, α = exact_BFGS!(x⁺, g⁺, x, g, p, grad!,H);
         # s = α⋅p, y = g⁺ - g
@@ -85,12 +90,12 @@ function My_BFGS(func, grad!, x0, opts::BFGS_options, svars::BFGS_vars)
         end
         
         # ρ = 1/yᵀs;
-        ρ = 1.0/dot(y,s);
+        ρ = T(1.0)/dot(y,s);
         μ = sum(abs2, s);
-        ρ = min(10.0, ρ*μ)/μ;
+        ρ = min(T(10.0), ρ*μ)/μ;
         if ρ > 0.0
             # p = H⋅y
-            BLAS.gemv!('N',1.0,H,y,0.0,p);
+            BLAS.gemv!('N',T(1.0),H,y,T(0.0),p);
             # β = yᵀp⋅ρ² + ρ
             β = dot(y,p)*ρ^2 + ρ;
             # H ⟵ H - ρ(p⋅sᵀ + s⋅pᵀ) + β s⋅sᵀ
@@ -106,6 +111,7 @@ function My_BFGS(func, grad!, x0, opts::BFGS_options, svars::BFGS_vars)
         copy!(g, g⁺);
 
         obj = func(x);
+        
         err = vecnorm(g, Inf);
         noi += 1;
         updateOptimizerStats!(stats,obj,err,noi,ifstats)        
@@ -118,7 +124,7 @@ function My_BFGS(func, grad!, x0, opts::BFGS_options, svars::BFGS_vars)
         end
     end
     if ~opts.warm_start
-        fill!(H,0.0);
+        fill!(H,T(0.0));
         for i = 1:n
             H[i,i] = d;
         end
@@ -147,30 +153,30 @@ end
 #   flag 1: α reach tol
 #   flag 2: reach the maximum stepsize 1.0
 #----------------------------------------------------------------------------------------
-function exact_BFGS!(x⁺ , g⁺, x, g, p, ∇f, H; αmin = 1e-10, tol = 1e-12)
+function exact_BFGS!{T<:AbstractFloat}(x⁺::Array{T} , g⁺, x, g, p, ∇f, H; αmin = T(1e1)*eps(T), tol = T(1e2)*eps(T))
     n   = length(x)
-    l   = 0.0
+    l   = T(0.0)
     ml  = dot(g,p)
 
     if ml > 0.0
         println("Not a descent direction, restart BFGS...")
         # set p = -g
-        copy!(p, g); scale!(p, -1.0)
+        copy!(p, g); scale!(p, T(-1.0))
         # set H = I
-        fill!(H,0.0)
+        fill!(H,T(0.0))
         for i = 1:n
-            H[i,i] = 1.0
+            H[i,i] = T(1.0)
         end
     end
 
     # initialization and find the upper bound for α
-    u   = 1.0;
+    u   = T(1.0);
     for i = 1:n
         x⁺[i] = x[i] + p[i]
     end
     ∇f(g⁺,x⁺)
     mu   = dot(g⁺, p)
-    mu ≤ 0.0 && (return 2, 1.0)
+    mu ≤ 0.0 && (return 2, T(1.0))
     
     α = u
     m = mu
