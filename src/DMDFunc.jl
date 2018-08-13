@@ -1,36 +1,35 @@
-#==========================================================
-    DMD Objective Related Functions
-==========================================================#
+# This file is available under the terms of the MIT License
+
+@doc """
+Functions for evaluating the objective and gradient.
+These are mostly wrappers of the tools in DMDUtil.jl.
+"""
 
 ###########################################################
 # DMD objective function 
 #   make sure you already update all alpha, B related vars
-function DMDObj(vars, params;
+function DMDObj(vars::DMDVariables, params::DMDParams;
     updatephi = false, updateR = false)
 
-    c0 = zero(Complex{Float64});
-    c1 = one(Complex{Float64});
     # update phi
     updatephi && updatephimat!(vars.phi, params.t, vars.alpha);
     # update Residual
     updateR && updateResidual!(vars, params);
     if (any(isnan,vars.R) || any(isinf,vars.R))
-        return Inf
+        return real(eltype(vars.R)(Inf))
     end
-    # calculate objetive value
+    # calculate objective value
     return params.lossf(vars.R)
 end
 
-function DMDObj_sub(vars, params, id;
+function DMDObj_sub(vars::DMDVariables, params::DMDParams, id;
     updatephi = false, updateR = false)
-    c0 = zero(Complex{Float64});
-    c1 = one(Complex{Float64});
     # update phi
     updatephi && updatephimat!(vars.phi, params.t, vars.alpha);
     # update Residual
     updateR && updateResidual_sub!(vars, params, id);
     if (any(isnan,vars.r[id]) || any(isinf,vars.r[id]))
-        return Inf
+        return real(eltype(vars.R)(Inf))
     end
     return params.lossf(vars.r[id])
 end
@@ -43,7 +42,7 @@ function alphafunc(alphar, vars, params, svars)
     copy!(vars.alphar, alphar);
     updatephimat!(vars.phi, params.t, vars.alpha);
     if (any(isnan,vars.phi) || any(isinf,vars.phi))
-        return Inf
+        return real(eltype(vars.r)(Inf))
     end
     # variable projection, project b
     VPSolver!(vars,params,svars);
@@ -70,7 +69,6 @@ end
 ###########################################################
 # function value and gradient w.r.t. alpha
 function alpha_fg!(alphar, galphar, vars, params, svars)
-
     VPSolver! = svars.VPSolver!
     # inner solve
     copy!(vars.alphar, alphar);
@@ -95,7 +93,7 @@ end
 
 ###########################################################
 # gradient w.r.t. b[id]
-function bgrad_sub!(br, gbr, vars, params, id)
+function bgrad_sub!{T<:Union{Float64,Float32}}(br::Array{T}, gbr::Array{T}, vars::DMDVariables{T}, params::DMDParams{T}, id)
     # update b related variables
     copy!(vars.br[id], br);
     # update Residual
@@ -103,34 +101,36 @@ function bgrad_sub!(br, gbr, vars, params, id)
     params.lossg(vars.r[id]);
     # wrap complex array around gbr
     pr = pointer(gbr);
-    pc = convert(Ptr{Complex{Float64}}, pr);
+    pc = convert(Ptr{Complex{T}}, pr);
     gb = unsafe_wrap(Array, pc, params.k);
     # obtain complex gradient
-    c0 = zero(Complex{Float64});
-    c1 = one(Complex{Float64});
+    c0 = zero(Complex{T});
+    c1 = one(Complex{T});
     BLAS.gemm!('T','N',c1,vars.phi,vars.r[id],c0,gb);
     # transfer to real gradient
-    scale!(gbr, -2.0);
-    BLAS.scal!(params.k,-1.0,gbr,2);
+    scale!(gbr, T(-2.0));
+    BLAS.scal!(params.k,T(-1.0),gbr,2);
 end
 
 ###########################################################
 # gradient w.r.t. alpha for the jth function
-function alphagrad_sub!(galphar, vars, params, id)
+function alphagrad_sub!{T<:Union{Float64,Float32}}(galphar::Array{T}, vars::DMDVariables{T}, params::DMDParams{T}, id)
     # calculate gradient
     updateResidual_sub!(vars, params, id);
     params.lossg(vars.r[id]);
     # wrap complex array around galphar
     pr = pointer(galphar);
-    pc = convert(Ptr{Complex{Float64}}, pr);
+    pc = convert(Ptr{Complex{T}}, pr);
     galpha = unsafe_wrap(Array, pc, params.k);
     # obtain complex gradient
     # TODO: This step need to be optimized
     # BLAS.sum!(galpha, (vars.phi.'*diagm(params.t)*vars.R).*vars.B);
     broadcast!(*,vars.r[id],vars.r[id],params.t);
-    BLAS.gemv!('T',1.0+0.0*im,vars.phi,vars.r[id],0.0+0.0*im,galpha);
+    c0 = zero(Complex{T});
+    c1 = one(Complex{T});
+    BLAS.gemv!('T',c1,vars.phi,vars.r[id],c0,galpha);
     broadcast!(*,galpha,galpha,vars.b[id]);
     # transfer to real gradient
-    scale!(galphar, -2.0);
-    BLAS.scal!(params.k,-1.0,galphar,2);
+    scale!(galphar, T(-2.0));
+    BLAS.scal!(params.k,T(-1.0),galphar,2);
 end

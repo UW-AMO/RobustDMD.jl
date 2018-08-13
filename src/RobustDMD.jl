@@ -20,7 +20,7 @@ export DMDVPSolverVariables, DMDVPSolverVariablesBFGS
 export DMDVPSolverVariablesLSQ, DMDVPSolverVariablesNull
 ### DMDUtil
 export updatephimat!, updatephipsi!, dmd_alphagrad1!
-export dmd_alphar_cg2rg, updateResidual!, updateResidual_sub!
+export cg2rg!, updateResidual!, updateResidual_sub!
 export genDMD, genDMD, dmdl2B!, dmdexactestimate
 export besterrperm, besterrperm_wi
 
@@ -46,16 +46,19 @@ export DMD_LSQ_solve!
 export projb_null!, projb_null_subset!, projb_null_sub!
 
 
-include("DMDProxGrad.jl")
+include("DMDType.jl")
 include("DMDFunc.jl")
+include("DMDVPSolvers.jl")
+include("DMDUtil.jl")
+
+include("DMDProxGrad.jl")
 include("BFGS.jl")
-include("DMDLoss.jl")
 include("DMDSVRG.jl")
 include("DMDTrim.jl")
-include("DMDType.jl")
-include("DMDUtil.jl")
+
+include("DMDLoss.jl")
 include("gradientTest.jl")
 include("OptimizerStats.jl")
-include("DMDVPSolvers.jl")
+
 
 end

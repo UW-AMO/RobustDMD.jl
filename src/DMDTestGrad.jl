@@ -73,7 +73,7 @@ lossf = (z) -> huber_func(z, kappa);
 lossg = (z) -> huber_grad!(z, kappa);
 
 h = n
-params = DMDParams(k,h,X,t,lossf,lossg)
+params = DMDParams(k,X,t,lossf,lossg)
 StDMD = DMDVariables(alpha0, B0, params);
 StSvars = DMDVPSolverVariablesNull(params)
 
