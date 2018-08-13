@@ -12,7 +12,6 @@
 # in order to keep e^(Re(alpha)*tmax) from being too large,
 # e.g. overflow may occur without such a choice
 
-include("../src/RobustDMD.jl")
 using RobustDMD
 
 T = Float32

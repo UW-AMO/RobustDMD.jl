@@ -5,8 +5,6 @@
 #
 # Both l2 and huber penalties are demonstrated
 
-#using RobustDMD
-include("../src/RobustDMD.jl")
 using RobustDMD
 
 T = Float32

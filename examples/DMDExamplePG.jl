@@ -5,7 +5,6 @@
 #
 # We test the l2 penalty here (a more or less arbitrary choice)
 
-include("../src/RobustDMD.jl")
 using RobustDMD
 
 T = Float32
