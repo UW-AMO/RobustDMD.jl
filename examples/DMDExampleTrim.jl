@@ -23,7 +23,7 @@ println("generate synthetic data...")
 # dimensions
 m = 100;    # temporal dimension
 n = 100;    # spatial dimension
-h = 80;
+h = 80;     # trimming level
 k = 3;      # number of modes
 # generate data
 sigma = T(1e-4); # size of background noise
@@ -60,7 +60,7 @@ function prox_mr(αr)
 end
 
 # apply solver
-options = Trim_options(300,T(1e-5),T(1.2),true,true,10,prox=prox_mr);
+options = Trim_options(h,300,T(1e-5),T(1.2),true,true,10,prox=prox_mr);
 Trim_solve_DMD!(l2DMD, l2Params, l2Svars, options);
 
 

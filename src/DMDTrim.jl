@@ -19,7 +19,7 @@ function Trim_options{T<:AbstractFloat}(h::Integer,itm::Integer,tol::T,step_size
                       ifstats::Bool,show_his::Bool,
                       print_frequency::Integer; 
                       prox::Function = Trimnullprox!)
-    return Trim_options(itm,tol,step_size,ifstats,show_his,
+    return Trim_options(h,itm,tol,step_size,ifstats,show_his,
                         print_frequency,prox)
 end
 
