@@ -58,6 +58,8 @@ function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDPar
     dgr = zeros(T,2*k);
     prox(vars.alphar)
     alphar_old = copy(vars.alphar);
+    updatephimat!(vars.phi, params.t, vars.alpha);
+    
     # store all the gradient
     Gc  = zeros(vars.B);
     pg  = convert(Ptr{T}, pointer(Gc));
@@ -69,16 +71,18 @@ function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDPar
     end
     # calculate the full gradient of alpha once
     VPSolver!(vars,params,svars)
-    for id = 1:n
-        alphagrad_sub!(gr[id], vars, params, id);
-        BLAS.axpy!(T(1.0),gr[id],sgr);
-    end
+    #for id = 1:n
+    #    alphagrad_sub!(gr[id], vars, params, id);
+    #    BLAS.axpy!(T(1.0),gr[id],sgr);
+    #end
     obj = DMDObj(vars, params; updatephi=true, updateR=true);
     err = T(1.0);
     noi = 0;
     nu  = mu;
     updateOptimizerStats!(stats,obj,err,noi,ifstats)
     @show obj;
+    @show vecnorm(sgr)
+    @show vecnorm(vars.alphar)
     for noi = 1:itm
         sample!(ind,indtau,replace=false);
         fill!(dgr, T(0.0));
@@ -102,12 +106,12 @@ function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDPar
         prox(vars.alphar)
 
         ##### disable BB line search #####
-        # if noi > itm
-        #     BLAS.axpy!(-1.0,vars.alphar,alphar_old);
-        #     nu = -(dot(alphar_old,alphar_old)/dot(alphar_old,dgr))*tau/n;
-        #     (isnan(nu)|| nu < 0.0) && (nu = mu/(noi + 1));
-        #     err = vecnorm(alphar_old);
-        # end
+        #BLAS.axpy!(T(-1.0),vars.alphar,alphar_old);
+        #nu = -(dot(alphar_old,alphar_old)/dot(alphar_old,dgr))*tau/n;
+        #(isnan(nu)|| nu < 0.0) && (nu = mu/T(sqrt(div(noi,uf) + 1)));
+        #err = vecnorm(alphar_old);
+        #@show nu
+        #@show err
 
         ##### using diminishing step size #####
         nu = mu/T(sqrt(div(noi,uf) + 1));

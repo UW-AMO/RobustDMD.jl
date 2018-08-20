@@ -26,7 +26,8 @@ end
 function projb_BFGS!(vars::DMDVariables, params::DMDParams, svars::DMDVPSolverVariables;
                      updatephi = false)
     updatephi && updatephimat!(vars.phi, params.t, vars.alpha);
-    for id = 1:params.n
+    Threads.@threads for id = 1:params.n
+        #@show id
         projb_BFGS_sub!(vars,params,svars,id)
     end
     svars.novps = svars.novps + params.n
@@ -35,7 +36,7 @@ end
 function projb_BFGS_subset!{T<:Integer}(vars::DMDVariables, params::DMDParams, svars::DMDVPSolverVariables,
                             inds::Array{T}; updatephi=false)
     updatephi && updatephimat!(vars.phi, params.t, vars.alpha);    
-    for i = 1:length(inds)
+    Threads.@threads for i = 1:length(inds)
         id = inds[i]
         projb_BFGS_sub!(vars,params,svars,id)
     end
@@ -98,20 +99,24 @@ function DMD_LSQ_solve!{T<:Union{Float64,Float32}}(B::Array{Complex{T}},phi::Arr
 
     m, n = size(X)
 
-    # stabilized least squares solution
+    if (any(isnan,phi) || any(isinf,phi))
+        # error handling (probably a bad alpha...)
+        fill!(B,T(0.0))
+    else
+        # stabilized least squares solution
 
-    F = svdfact!(phi,thin=true)
+        F = svdfact(phi,thin=true)
 
-    s1 = maximum(F[:S])
-    k2 = sum(F[:S] .> s1*epsmin)
+        s1 = maximum(F[:S])
+        k2 = sum(F[:S] .> s1*epsmin)
 
-    Y = zeros(Complex{T},k2,n)
-    U = view(F[:U],:,1:k2)
-    Vt = view(F[:Vt],1:k2,:)
-    BLAS.gemm!('C','N',c1,U,X,c0,Y)
-    scale!(1./F[:S][1:k2],Y)
-    BLAS.gemm!('C','N',c1,Vt,Y,c0,B)
-
+        Y = zeros(Complex{T},k2,n)
+        U = view(F[:U],:,1:k2)
+        Vt = view(F[:Vt],1:k2,:)
+        BLAS.gemm!('C','N',c1,U,X,c0,Y)
+        scale!(1./F[:S][1:k2],Y)
+        BLAS.gemm!('C','N',c1,Vt,Y,c0,B)
+    end
 end
 
 
