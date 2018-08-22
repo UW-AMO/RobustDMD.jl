@@ -15,10 +15,10 @@
 
 function gradientTest(fcn, x0, pert)
 
-    ϵ = pert*randn(size(x0));
+    ϵ = eltype(x0)(pert)*randn(eltype(x0),size(x0));
 
-    c = 0.1;
-    scale!(ϵ, 1.0/c^2);
+    c = eltype(x0)(0.1);
+    scale!(ϵ, eltype(x0)(1.0)/c^2);
     println("Running gradient test:");
 
     f0, g0 = fcn(x0);
@@ -38,5 +38,6 @@ function gradientTest(fcn, x0, pert)
         end
         err = 1.0 - 0.5*err/(f1 - f0);
         @printf("‖ϵ‖: %1.5e, err %1.5e\n", vecnorm(ϵ), err);
+        @show f1 f0
     end
 end

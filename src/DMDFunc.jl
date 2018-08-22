@@ -16,7 +16,7 @@ function DMDObj(vars::DMDVariables, params::DMDParams;
     # update Residual
     updateR && updateResidual!(vars, params);
     if (any(isnan,vars.R) || any(isinf,vars.R))
-        return real(eltype(vars.R)(Inf))
+        return real(eltype(vars.R))(Inf)
     end
     # calculate objective value
     return params.lossf(vars.R)
@@ -29,7 +29,7 @@ function DMDObj_sub(vars::DMDVariables, params::DMDParams, id;
     # update Residual
     updateR && updateResidual_sub!(vars, params, id);
     if (any(isnan,vars.r[id]) || any(isinf,vars.r[id]))
-        return real(eltype(vars.R)(Inf))
+        return real(eltype(vars.R))(Inf)
     end
     return params.lossf(vars.r[id])
 end
@@ -42,7 +42,7 @@ function alphafunc(alphar, vars, params, svars)
     copy!(vars.alphar, alphar);
     updatephimat!(vars.phi, params.t, vars.alpha);
     if (any(isnan,vars.phi) || any(isinf,vars.phi))
-        return real(eltype(vars.r)(Inf))
+        return real(eltype(vars.R))(Inf)
     end
     # variable projection, project b
     VPSolver!(vars,params,svars);

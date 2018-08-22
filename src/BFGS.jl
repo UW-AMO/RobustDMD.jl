@@ -32,8 +32,7 @@ mutable struct BFGS_vars{T<:AbstractFloat}
     H ::Array{T,2}
 end
 
-function BFGS_vars{T<:AbstractFloat}(n::Integer,alpha::T)
-    sigma = sqrt(eps(T))
+function BFGS_vars{T<:AbstractFloat}(n::Integer,alpha::T,sigma::T = sqrt(eps(T)))
     x = zeros(T,n);
     x⁺ = zeros(T,n);
     g = zeros(T,n);
@@ -79,10 +78,13 @@ function My_BFGS{T<:AbstractFloat}(func, grad!, x0::Array{T}, opts::BFGS_options
     updateOptimizerStats!(stats,obj,err,noi,ifstats)
 
     while err ≥ tol
+
         # p = -H⋅g
         BLAS.gemv!('N',T(-1.0),H,g,T(0.0),p);
         # line search with direction p
         flag, α = exact_BFGS!(x⁺, g⁺, x, g, p, grad!,H);
+        #(flag == 1) && @show (flag, noi)
+        #(err > 1e5) && @show noi
         # s = α⋅p, y = g⁺ - g
         for i = 1:n
             s[i] = α*p[i];
@@ -158,15 +160,19 @@ function exact_BFGS!{T<:AbstractFloat}(x⁺::Array{T} , g⁺, x, g, p, ∇f, H; 
     l   = T(0.0)
     ml  = dot(g,p)
 
+    #@show sum(isnan(p)), sum(isnan(H))
     if ml > 0.0
-        println("Not a descent direction, restart BFGS...")
+        #@show vecnorm(H)
+        #@show vecnorm(g), vecnorm(p)
+        #println("Not a descent direction, restart BFGS... ml = ",ml)
         # set p = -g
-        copy!(p, g); scale!(p, T(-1.0))
+        copy!(p, g); scale!(p, T(-1.0e-5))
         # set H = I
         fill!(H,T(0.0))
         for i = 1:n
-            H[i,i] = T(1.0)
+            H[i,i] = T(1.0e-5)
         end
+        ml = dot(g,p)
     end
 
     # initialization and find the upper bound for α
@@ -181,10 +187,10 @@ function exact_BFGS!{T<:AbstractFloat}(x⁺::Array{T} , g⁺, x, g, p, ∇f, H; 
     α = u
     m = mu
     noi = 0
-    # start find root
+    # start find root 
     while abs(m) ≥ tol
         α = (l*abs(mu)+u*abs(ml))/(abs(ml)+abs(mu))
-        α < αmin && (return 1, α)
+        #α < αmin && (return 1, α)
         for i = 1:n
             x⁺[i] = x[i] + α*p[i]
         end
