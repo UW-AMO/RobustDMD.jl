@@ -1,8 +1,8 @@
 # This file is available under the terms of the MIT License
 
 @doc """
-Outer solves by variance-reduced stochastic gradient descent 
-(SVRG). 
+Outer solves by variance-reduced stochastic gradient descent
+(SVRG).
 """
 
 using StatsBase
@@ -18,6 +18,7 @@ mutable struct SVRG_options{T<:AbstractFloat}
     show_his::Bool
     print_frequency::Integer
     prox::Function
+    search::String
 end
 
 function SVRG_options{T<:AbstractFloat}(itm::Integer,
@@ -26,9 +27,11 @@ function SVRG_options{T<:AbstractFloat}(itm::Integer,
                       update_obj_every::Integer,ifstats::Bool,
                       show_his::Bool,
                       print_frequency::Integer;
-                      prox::Function = SVRGnullprox!)
+                      prox::Function = SVRGnullprox!,
+                      search="diminishing")
     return SVRG_options(itm,tol,batch_size,step_size,update_nu_every,
-                        update_obj_every,ifstats,show_his,print_frequency,prox)
+                        update_obj_every,ifstats,show_his,print_frequency,prox,
+                        search)
 end
 
 function SVRGnullprox!(x)
@@ -46,6 +49,7 @@ function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDPar
     pf  = options.print_frequency;
     uf  = options.update_nu_every;
     of = options.update_obj_every;
+    search = options.search
     prox = options.prox
     n   = params.n;
     k   = params.k;
@@ -58,6 +62,7 @@ function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDPar
     dgr = zeros(T,2*k);
     prox(vars.alphar)
     alphar_old = copy(vars.alphar);
+    updatephimat!(vars.phi,params.t,vars.alpha)
     # store all the gradient
     Gc  = zeros(vars.B);
     pg  = convert(Ptr{T}, pointer(Gc));
@@ -82,7 +87,7 @@ function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDPar
     for noi = 1:itm
         sample!(ind,indtau,replace=false);
         fill!(dgr, T(0.0));
-        
+
         # project out all for this subset
         VPSolver_subset!(vars,params,svars,indtau)
 
@@ -101,19 +106,18 @@ function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDPar
         ##### add projection of the real part #####
         prox(vars.alphar)
 
-        ##### disable BB line search #####
-        # if noi > itm
-        #     BLAS.axpy!(-1.0,vars.alphar,alphar_old);
-        #     nu = -(dot(alphar_old,alphar_old)/dot(alphar_old,dgr))*tau/n;
-        #     (isnan(nu)|| nu < 0.0) && (nu = mu/(noi + 1));
-        #     err = vecnorm(alphar_old);
-        # end
-
+        BLAS.axpy!(-1.0,vars.alphar,alphar_old);
         ##### using diminishing step size #####
-        nu = mu/T(sqrt(div(noi,uf) + 1));
-        err = vecnorm(vars.alphar - alphar_old);
+        if search == "diminishing"
+            nu = mu/T(sqrt(div(noi,uf) + 1));
+        elseif search == "bbline"
+            if noi > itm
+                 nu = -(dot(alphar_old,alphar_old)/dot(alphar_old,dgr))*tau/n;
+                 (isnan(nu)|| nu < 0.0) && (nu = mu/(noi + 1));
+             end
+         end
+        err = vecnorm(alphar_old);
 
-        # @show nu
         copy!(alphar_old, vars.alphar);
 
         # update gradient
@@ -140,5 +144,5 @@ function SVRG_solve_DMD!{T<:AbstractFloat}(vars::DMDVariables{T}, params::DMDPar
 
     # return stats
     return stats
-    
+
 end
