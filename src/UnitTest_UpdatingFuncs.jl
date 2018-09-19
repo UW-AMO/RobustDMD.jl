@@ -83,8 +83,8 @@ end
 #--------------------------------------------------------------------
 # Test Updating B, b
 #--------------------------------------------------------------------
-update_B!(vars, params, svars); copy!(vars.B, B0);
-@time update_B!(vars, params, svars); copy!(vars.B, B0);
+update_B!(vars, params, svars);
+@time update_B!(vars, params, svars);
 err = vecnorm(vars.B - vars.P \ params.X);
 tol = 1e-10;
 if err < tol
@@ -93,8 +93,8 @@ else
 	println("update_B! is NOT OK!");
 end
 
-update_b!(vars, params, svars, 1); copy!(vars.B, B0);
-@time update_b!(vars, params, svars, 1); copy!(vars.B, B0);
+update_b!(vars, params, svars, 1);
+@time update_b!(vars, params, svars, 1);
 err = vecnorm(vars.b[1] - vars.P \ params.x[1]);
 tol = 1e-10;
 if err < tol

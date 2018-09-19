@@ -133,51 +133,48 @@ function update_b!(vars, params, svars, id)
     upper_solve!(svars.PR, vars.b[id]);
 end
 
-for (elty) in (Float32,Float64)
-    @eval begin
-        function dmd_alphagrad1!(gr::Array{$elty},vars::DMDVars{$elty},params::DMDParams{$elty})
-            #
-            # Helper routine: following the inner solve, 
-            # this routine computes the gradient w.r.t alpha
-            #
-            # This routine assumes that alphar, B, and R 
-            # are up-to-date
-            #
-            # NOTE: this function overwrites R to save space
-            #
 
-            phi = vars.phi
-            t = params.t
-            B = vars.B
-            R = vars.R
-            lossg! = params.lossg
+function grad_ar!(gr, vars, params, svars)
+    #
+    # Helper routine: following the inner solve, 
+    # this routine computes the gradient w.r.t alpha
+    #
+    # This routine assumes that alphar, B, and R 
+    # are up-to-date
+    #
+    # NOTE: this function overwrites R to save space
+    #
 
-            # wrap complex array around galphar
-            pr = pointer(gr);
-            pc = convert(Ptr{Complex{$elty}}, pr);
-            gc = unsafe_wrap(Array, pc, params.k);
-            # compute complex gradient
-            lossg!(R);
-            c1 = one(Complex{$elty})
-            c0 = zero(Complex{$elty})
-            temp = zeros(B)
-            scale!(t,R)
-            BLAS.gemm!('T','N',c1,phi,R,c0,temp)
-            temp = temp.*B
-            BLAS.sum!(gc,temp)
+    t = params.t;
+    P = vars.P;
+    B = vars.B;
+    R = vars.R;
+    tM = svars.tM;
 
-            cg2rg!(gr,params.k)
-        end
-    end
+    T = eltype(params.X);
+
+    # wrap complex array around galphar
+    pr = pointer(gr);
+    pc = convert(Ptr{T}, pr);
+    gc = unsafe_wrap(Array, pc, params.k);
+    # compute complex gradient
+    lossg!(R);
+    c1 = one(T);
+    c0 = zero(T);
+    temp = zeros(B);
+    scale!(t,R);
+    BLAS.gemm!('T', 'N', c1, P, R, c0, tM);
+    broadcast!(*, tM, tM, B);
+    BLAS.sum!(gc, tM);
+
+    gc2gr!(gr, params.k);
 end
 
-for (elty) in (Float32,Float64)
-    @eval begin
-        function cg2rg!(gr::Array{$elty},k::Integer)
-            scale!(gr, $elty(-2.0));
-            BLAS.scal!(k,$elty(-1.0),gr,2);
-        end
-    end
+
+function cg2rg!(gr, k)
+    T = eltype(gr);
+    scale!(gr, T(-2.0));
+    BLAS.scal!(k, T(-1.0), gr, 2);
 end
 
 ###########################################################

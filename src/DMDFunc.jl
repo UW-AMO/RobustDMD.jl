@@ -8,61 +8,52 @@ These are mostly wrappers of the tools in DMDUtil.jl.
 ###########################################################
 # DMD objective function 
 #   make sure you already update all alpha, B related vars
-function DMDObj(vars::DMDVariables, params::DMDParams;
-    updatephi = false, updateR = false)
-
+function objective(ar, vars, params, svars;
+    updateP=true, updateB=true, updateR=true)
+    
+    copy!(svars.ar, ar);
     # update phi
-    updatephi && updatephimat!(vars.phi, params.t, vars.alpha);
+    updateP && (update_P!(vars, params);
+        update_PQR!(vars, params, svars));
+    # update B
+    updateB && update_B!(vars, params, svars);
     # update Residual
-    updateR && updateResidual!(vars, params);
-    if (any(isnan,vars.R) || any(isinf,vars.R))
-        return real(eltype(vars.R)(Inf))
-    end
+    updateR && update_R!(vars, params);
+    
     # calculate objective value
-    return params.lossf(vars.R)
+    return 0.5*sum(abs2, vars.R);
 end
 
-function DMDObj_sub(vars::DMDVariables, params::DMDParams, id;
-    updatephi = false, updateR = false)
-    # update phi
-    updatephi && updatephimat!(vars.phi, params.t, vars.alpha);
-    # update Residual
-    updateR && updateResidual_sub!(vars, params, id);
-    if (any(isnan,vars.r[id]) || any(isinf,vars.r[id]))
-        return real(eltype(vars.R)(Inf))
-    end
-    return params.lossf(vars.r[id])
-end
+function objective(ar, vars, params, svars, id;
+    updateP=true, updateB=true, updateR=true)
 
-###########################################################
-# objective w.r.t. alpha
-function alphafunc(alphar, vars, params, svars)
-    VPSolver! = svars.VPSolver!
-    # update alpha related variables
-    copy!(vars.alphar, alphar);
-    updatephimat!(vars.phi, params.t, vars.alpha);
-    if (any(isnan,vars.phi) || any(isinf,vars.phi))
-        return real(eltype(vars.r)(Inf))
-    end
-    # variable projection, project b
-    VPSolver!(vars,params,svars);
+    copy!(svars.ar, ar);
+    # update phi
+    updateP && (update_P!(vars, params);
+        update_PQR!(vars, params, svars));
+    # update B
+    updateB && update_b!(vars, params, svars, id);
+    # update Residual
+    updateR && update_r!(vars, params, id);
+    
     # calculate objective value
-    return DMDObj(vars, params, updateR = true)
+    return 0.5*sum(abs2, vars.r[id]);
 end
 
 ###########################################################
 # gradient w.r.t. alpha
-function alphagrad!(alphar, galphar, vars, params, svars)
-    VPSolver! = svars.VPSolver!
-    # update alpha related variables
-    copy!(vars.alphar, alphar);
-    updatephimat!(vars.phi, params.t, vars.alpha);
-    # variable projection, project b
-    VPSolver!(vars,params,svars);
-    # update residual (new b)
-    updateResidual!(vars, params)
-    # calculate gradient
-    dmd_alphagrad1!(galphar,vars,params)
+function gradient!(ar, gar, vars, params, svars;
+    updateP=true, updateB=true, updateR=true)
+    
+    copy!(svars.ar, ar);
+    # update phi
+    updateP && (update_P!(vars, params);
+        update_PQR!(vars, params, svars));
+    # update B
+    updateB && update_B!(vars, params, svars);
+
+
+    
 
 end
 

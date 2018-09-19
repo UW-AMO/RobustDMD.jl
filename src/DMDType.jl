@@ -86,6 +86,8 @@ mutable struct DMDSVars{T<:AbstractFloat}
     PQ::Matrix{Complex{T}}
     PR::Matrix{Complex{T}}
     tP::Vector{Complex{T}}
+    # variables used for gradient of a
+    tM::Matrix{Complex{T}}
 end
 
 # constructors
@@ -98,6 +100,7 @@ function DMDSVars(params)
     PQ = zeros(T, m, k);
     PR = zeros(T, k, k);
     tP = zeros(T, k);
+    tM = zeros(T, k, n);
 
-    return DMDSVars(PQ, PR, tP)
+    return DMDSVars(PQ, PR, tP, tM)
 end
