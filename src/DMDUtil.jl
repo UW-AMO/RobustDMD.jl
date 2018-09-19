@@ -6,44 +6,136 @@ generating synthetic examples, evaluating derivatives,
 etc. Many depend on BLAS for speed   
 """
 ###########################################################
-# populate exponential matrix
+# return the column view (complex or real) of a matrix
+function col_view(X)
+    dim(X) == 1 && (return X);
+    m,n = size(X);
+    T   = eltype(X);
+    s   = sizeof(T);
+    p   = pointer(X);
+    x   = Array{Vector{T}, 1}(n);
+    for i = 1:n
+        x[i] = unsafe_wrap(Array, p, m);
+        p += m*s;
+    end
+    return x
+end
 
-for (elty) in (Float32,Float64)
-    @eval begin
-
-        function updatephimat!(phi::Array{Complex{$elty},2}, t::Array{Complex{$elty},1}, alpha::Array{Complex{$elty},1})
-            c0 = zero(Complex{$elty});
-            c1 = one(Complex{$elty});
-            BLAS.gemm!('N','T',c1,t,alpha,c0,phi);
-            for I in eachindex(phi)
-                phi[I] = exp(phi[I]);
-            end
+function col_view_real(X)
+    # assert X is complex
+    T = typeof(real(X[1]));
+    p = convert(Ptr{T}, pointer(X));
+    s = sizeof(T);
+    if dim(X) == 1
+        m = length(X);
+        x = unsafe_wrap(Array, p, 2*m);
+        return x
+    else
+        m,n = size(X);
+        x   = Array{Vector{T},1}(n);
+        for i = 1:n
+            x[i] = unsafe_wrap(Array, p, 2*m);
+            p += 2*m*s;
         end
+        return x
     end
 end
 
+###########################################################
+# populate exponential matrix
+function update_P!(vars, params)
+    T  = eltype(params.X);
+    c0 = zero(T);
+    c1 = one(T);
+    BLAS.gemm!('N', 'T', c1,params.t, vars.a,c0, vars.P);
+    map!(exp, vars.P, vars.P);
+end
 
-# update Functions
-for (elty) in (Float32,Float64)
-    @eval begin
-
-        function updatephipsi!(phi::Array{Complex{$elty},2}, t::Array{Complex{$elty},1}, alpha::Array{Complex{$elty},1}, f)
-            c0 = zero(Complex{$elty});
-            c1 = one(Complex{$elty});
-            BLAS.gemm!('N','T',c1,t,alpha,c0,phi);
-            for I in eachindex(phi)
-                phi[I] = f(phi[I]);
-            end
-        end
-    end
+function update_P_general!(P, t, a, f)
+    T  = eltype(a);
+    c0 = zero(T);
+    c1 = one(T);
+    BLAS.gemm!('N', 'T', c1, t, a, c0, P);
+    map!(f, P, P);
 end
 
 ############################################################
-# gradients, residuals, etc
+# update residuals
+function update_R!(vars, params)
+    T  = eltype(params.X);
+    c0 = zero(T);
+    c1 = one(T);
+
+    BLAS.gemm!('N', 'N', c1, vars.P, vars.B, c0, vars.R);
+    broadcast!(-, vars.R, vars.R, params.X);
+end
+
+function update_r!(vars, params, id)
+    T  = eltype(params.X);
+    c0 = zero(T);
+    c1 = one(T);
+
+    BLAS.gemm!('N', 'N', c1, vars.P, vars.b[id], c0, vars.r[id]);
+    broadcast!(-, vars.r[id], vars.r[id], params.x[id]);
+end
+
+############################################################
+# update the QR factorization of P
+function update_PQR(vars, params, svars)
+    P = vars.P;
+    T = eltype(P);
+    PQ = svars.PQ;
+    PR = svars.PR;
+    tP = svars.tP;
+
+    c1 = one(T);
+    c0 = zero(T);
+
+    # calculate QR decomposition
+    copy!(PQ, P);
+    LAPACK.geqrf!(PQ, tP);
+    LAPACK.orgqr!(PQ, tP);
+    BLAS.gemm!('C', 'N', c1, PQ, P, c0, PR);
+end
+
+# solve upper triangular linear system
+function upper_solve!(PR, b)
+    k = length(b);
+    # backsubtitution
+    b[k] = b[k]/PR[k,k];
+    for i = k-1:-1:1
+        # calculate the rhs
+        for j = i+1:k
+            b[i] -= P[i,j]*b[j];
+        end
+        b[i] = b[i]/P[i,i];
+    end
+end
+
+
+############################################################
+# update B, b
+function update_B!(vars, params, svars)
+    T  = eltype(params.X);
+    c0 = zero(T);
+    c1 = one(T);
+    BLAS.gemm!('C', 'N', c1, svars.PQ, params.X, c0, vars.B);
+    for i = 1:params.n
+        upper_solve!(svars.PR, vars.b[i]);
+    end
+end
+
+function update_b!(vars, params, svars, id)
+    T  = eltype(params.X);
+    c0 = zero(T);
+    c1 = one(T);
+    BLAS.gemv!('C', c1, svars.PQ, params.x[id], c0, vars.b[id]);
+    upper_solve!(svars.PR, vars.b[id]);
+end
 
 for (elty) in (Float32,Float64)
     @eval begin
-        function dmd_alphagrad1!(gr::Array{$elty},vars::DMDVariables{$elty},params::DMDParams{$elty})
+        function dmd_alphagrad1!(gr::Array{$elty},vars::DMDVars{$elty},params::DMDParams{$elty})
             #
             # Helper routine: following the inner solve, 
             # this routine computes the gradient w.r.t alpha
@@ -88,99 +180,72 @@ for (elty) in (Float32,Float64)
     end
 end
 
-for (elty) in (Float32,Float64)
-    @eval begin
-        function updateResidual!(vars::DMDVariables{$elty}, params::DMDParams{$elty})
-            c1 = one(Complex{$elty});
-            copy!(vars.R, params.X);
-            BLAS.gemm!('N','N',c1,vars.phi,vars.B,-c1,vars.R);
-        end
-    end
-end
-
-
-for (elty) in (Float32,Float64)
-    @eval begin
-        function updateResidual_sub!(vars::DMDVariables{$elty}, params::DMDParams{$elty}, id)
-            c1 = one(Complex{$elty});
-            copy!(vars.r[id], params.x[id]);
-            BLAS.gemm!('N','N',c1,vars.phi,vars.b[id],-c1,vars.r[id]);
-        end
-    end
-end
-
 ###########################################################
 # generate a simple synthetic example
+function genDMD(m, n, k, sigma, mu; seed=123, mode=1, p = 0.1)
 
-for (elty) in (Float32,Float64)
-    @eval begin
-        function genDMD(m, n, k, sigma::$elty, mu::$elty; seed=123, mode=1, p = 0.1)
+    T = typeof(sigma);
+    srand(seed);
 
-            srand(seed);
+    # time and space vector
+    t = complex(collect(linspace(T(0.0),T(1.0),m)));
+    s = complex(collect(linspace(T(-pi), T(pi),n)));
 
-            # time and space vector
-            t = complex(collect(linspace($elty(0.0),$elty(1.0),m)));
-            s = complex(collect(linspace($elty(-pi), $elty(pi),n)));
+    # data matrix
+    c0 = zero(Complex{T});
+    c1 = one(Complex{T});
+    alphat = im*randn(T,k);       # temporal modes
+    betat = c1*T(6.0)*randn(T,k);   # spatial modes
+    # phit = exp(t⋅alphatᵀ), psit = sin(s⋅betatᵀ)
+    phit = zeros(Complex{T},m,k); update_P_general!(phit, t, alphat, exp);
+    psit = zeros(Complex{T},n,k); update_P_general!(psit, s, betat, sin);
+    
+    # xclean = phit⋅psitᵀ
+    xclean  = zeros(Complex{T},m,n);
+    BLAS.gemm!('N','T',c1,phit,psit,c0,xclean);
 
-            # data matrix
-            c0 = zero(Complex{$elty});
-            c1 = one(Complex{$elty});
-            alphat = im*randn($elty,k);       # temporal modes
-            betat = c1*$elty(6.0)*randn($elty,k);   # spatial modes
-            # phit = exp(t⋅alphatᵀ), psit = sin(s⋅betatᵀ)
-            phit = zeros(Complex{$elty},m,k); updatephimat!(phit, t, alphat);
-            psit = zeros(Complex{$elty},n,k); updatephipsi!(psit, s, betat, sin);
-            
-            # xclean = phit⋅psitᵀ
-            xclean  = zeros(Complex{$elty},m,n);
-            BLAS.gemm!('N','T',c1,phit,psit,c0,xclean);
+    xdat = copy(xclean)
 
-            xdat = copy(xclean)
-
-            if (mode == 2)
-                ncol = sum( rand($elty,n) .< p )
-                icols = sample(1:n,ncol,replace=false)
-                ikeep = zeros($elty,m,n)
-                ikeep[:,icols] = one($elty)
-                noise = sigma*randn($elty,m,n) + mu*randn($elty,m,n).*ikeep
-            else
-                noise = sigma*randn($elty,m,n) + mu*randn($elty,m,n).*( rand($elty,m,n) .< p )
-            end
-
-            xdat = xclean + noise
-
-            return xdat, xclean, t, alphat, betat
-        end
+    if (mode == 2)
+        ncol = sum( rand(T,n) .< p )
+        icols = sample(1:n,ncol,replace=false)
+        ikeep = zeros(T,m,n)
+        ikeep[:,icols] = one(T)
+        noise = sigma*randn(T,m,n) + mu*randn(T,m,n).*ikeep
+    else
+        noise = sigma*randn(T,m,n) + mu*randn(T,m,n).*( rand(T,m,n) .< p )
     end
+
+    xdat = xclean + noise
+
+    return xdat, xclean, t, alphat, betat
 end
+
 ###########################################################
 # closed form solution of B for least squares problem
 
-for (elty) in (Float32,Float64)
-    @eval begin
-        function dmdl2B!(B::Array{Complex{$elty},2}, alpha::Array{Complex{$elty},1}, m, n, k, X::Array{Complex{$elty},2}, t::Array{Complex{$elty},1}; epsmin::$elty=$elty(1e2)*eps($elty))
-            c0 = zero(Complex{$elty});
-            c1 = one(Complex{$elty});
-            phi = zeros(Complex{$elty},m,k);
-            updatephimat!(phi, t, alpha);
+function dmdl2B!(B, alpha, m, n, k, X, t; epsmin=1e2*eps)
+    T  = eltype(X);
+    c0 = zero(Complex{T});
+    c1 = one(Complex{T});
+    phi = zeros(Complex{T},m,k);
+    updatephimat!(phi, t, alpha);
 
 
-            # stabilized least squares solution
+    # stabilized least squares solution
 
-            F = svdfact(phi,thin=true)
+    F = svdfact(phi,thin=true)
 
-            s1 = maximum(F[:S])
-            k2 = sum(F[:S] .> s1*epsmin)
+    s1 = maximum(F[:S])
+    k2 = sum(F[:S] .> s1*epsmin)
 
-            Y = zeros(Complex{$elty},k2,n)
-            U = view(F[:U],:,1:k2)
-            Vt = view(F[:Vt],1:k2,:)
-            BLAS.gemm!('C','N',c1,U,X,c0,Y)
-            scale!(1./F[:S][1:k2],Y)
-            BLAS.gemm!('C','N',c1,Vt,Y,c0,B)
+    Y = zeros(Complex{T},k2,n)
+    U = view(F[:U],:,1:k2)
+    Vt = view(F[:Vt],1:k2,:)
+    BLAS.gemm!('C','N',c1,U,X,c0,Y)
+    scale!(1./F[:S][1:k2],Y)
+    BLAS.gemm!('C','N',c1,Vt,Y,c0,B)
 
-        end
-    end
 end
 
 ###########################################################
