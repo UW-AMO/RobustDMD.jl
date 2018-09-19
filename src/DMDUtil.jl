@@ -8,7 +8,7 @@ etc. Many depend on BLAS for speed
 ###########################################################
 # return the column view (complex or real) of a matrix
 function col_view(X)
-    dim(X) == 1 && (return X);
+    ndims(X) == 1 && (return X);
     m,n = size(X);
     T   = eltype(X);
     s   = sizeof(T);
@@ -26,7 +26,7 @@ function col_view_real(X)
     T = typeof(real(X[1]));
     p = convert(Ptr{T}, pointer(X));
     s = sizeof(T);
-    if dim(X) == 1
+    if ndims(X) == 1
         m = length(X);
         x = unsafe_wrap(Array, p, 2*m);
         return x
@@ -81,7 +81,7 @@ end
 
 ############################################################
 # update the QR factorization of P
-function update_PQR(vars, params, svars)
+function update_PQR!(vars, params, svars)
     P = vars.P;
     T = eltype(P);
     PQ = svars.PQ;
@@ -106,9 +106,9 @@ function upper_solve!(PR, b)
     for i = k-1:-1:1
         # calculate the rhs
         for j = i+1:k
-            b[i] -= P[i,j]*b[j];
+            b[i] -= PR[i,j]*b[j];
         end
-        b[i] = b[i]/P[i,i];
+        b[i] = b[i]/PR[i,i];
     end
 end
 
