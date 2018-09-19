@@ -158,11 +158,10 @@ function grad_ar!(gr, vars, params, svars)
     pc = convert(Ptr{T}, pr);
     gc = unsafe_wrap(Array, pc, params.k);
     # compute complex gradient
-    lossg!(R);
-    c1 = one(T);
     c0 = zero(T);
-    temp = zeros(B);
-    scale!(t,R);
+    c1 = T(0.5);
+    conj!(R);
+    broadcast!(*, R, R, t);
     BLAS.gemm!('T', 'N', c1, P, R, c0, tM);
     broadcast!(*, tM, tM, B);
     BLAS.sum!(gc, tM);
@@ -170,8 +169,41 @@ function grad_ar!(gr, vars, params, svars)
     gc2gr!(gr, params.k);
 end
 
+function grad_ar!(gr, vars, params, svars, id)
+    #
+    # Helper routine: following the inner solve, 
+    # this routine computes the gradient w.r.t alpha
+    #
+    # This routine assumes that alphar, B, and R 
+    # are up-to-date
+    #
+    # NOTE: this function overwrites R to save space
+    #
 
-function cg2rg!(gr, k)
+    t = params.t;
+    P = vars.P;
+    b = vars.b;
+    r = vars.r;
+
+    T = eltype(params.X);
+
+    # wrap complex array around galphar
+    pr = pointer(gr);
+    pc = convert(Ptr{T}, pr);
+    gc = unsafe_wrap(Array, pc, params.k);
+    # compute complex gradient
+    c0 = zero(T);
+    c1 = T(0.5);
+    conj!(r[id]);
+    broadcast!(*, r[id], r[id], t);
+    BLAS.gemv!('T', c1, P, r[id], c0, gc);
+    broadcast!(*, gc, gc, b[id]);
+
+    gc2gr!(gr, params.k);
+end
+
+
+function gc2gr!(gr, k)
     T = eltype(gr);
     scale!(gr, T(-2.0));
     BLAS.scal!(k, T(-1.0), gr, 2);
