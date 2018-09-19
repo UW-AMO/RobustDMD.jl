@@ -224,12 +224,13 @@ end
 ###########################################################
 # closed form solution of B for least squares problem
 
-function dmdl2B!(B, alpha, m, n, k, X, t; epsmin=1e2*eps)
+function dmdl2B!(B, alpha, m, n, k, X, t)
     T  = eltype(X);
-    c0 = zero(Complex{T});
-    c1 = one(Complex{T});
-    phi = zeros(Complex{T},m,k);
-    updatephimat!(phi, t, alpha);
+    epsmin = 1e2*eps(typeof(real(X[1])));
+    c0 = zero(T);
+    c1 = one(T);
+    phi = zeros(T,m,k);
+    update_P_general!(phi, t, alpha, exp);
 
 
     # stabilized least squares solution
@@ -239,7 +240,7 @@ function dmdl2B!(B, alpha, m, n, k, X, t; epsmin=1e2*eps)
     s1 = maximum(F[:S])
     k2 = sum(F[:S] .> s1*epsmin)
 
-    Y = zeros(Complex{T},k2,n)
+    Y = zeros(T,k2,n)
     U = view(F[:U],:,1:k2)
     Vt = view(F[:Vt],1:k2,:)
     BLAS.gemm!('C','N',c1,U,X,c0,Y)
@@ -250,62 +251,59 @@ end
 
 ###########################################################
 # exact and trapezoidal dmd --- for generating initial guess
+function dmdexactestimate(m,n,k,X,t;dmdtype="trap")
+    # use the trapezoidal rule and exact DMD
+    # to estimate eigenvalues
+    # Assumes that the times are in order,
+    # i.e. that t[i] < t[i+1]
+    T  = eltype(X);
+    Tr = typeof(real(X[1]));
 
-for (elty) in (Float32,Float64)
-    @eval begin
+    if (dmdtype == "exact")
+        x1 = transpose(X[1:end-1,:])
+        x2 = transpose(X[2:end,:])
 
-        function dmdexactestimate(m,n,k,X::Array{Complex{$elty}},t::Array{Complex{$elty}};dmdtype="trap")
-            # use the trapezoidal rule and exact DMD
-            # to estimate eigenvalues
-            # Assumes that the times are in order,
-            # i.e. that t[i] < t[i+1]
+        dt = t[2]-t[1]
+        
+        u, s, v = svd(x1,thin = true)
+        u1 = u[:,1:k]
+        s1 = diagm(s[1:k])
+        v1 = v[:,1:k]
+        atilde = u1'*x2*v1/s1
+        alpha = eigvals(atilde)
+        alpha = log(alpha)/dt
+        
+        B = zeros(T,k,n)
+        dmdl2B!(B,alpha,m,n,k,X,t)
+        
+    else
 
-            if (dmdtype == "exact")
-                x1 = transpose(X[1:end-1,:])
-                x2 = transpose(X[2:end,:])
-
-                dt = t[2]-t[1]
-                
-                u, s, v = svd(x1,thin = true)
-                u1 = u[:,1:k]
-                s1 = diagm(s[1:k])
-                v1 = v[:,1:k]
-                atilde = u1'*x2*v1/s1
-                alpha = eigvals(atilde)
-                alpha = log(alpha)/dt
-                
-                B = zeros(Complex{$elty},k,n)
-                dmdl2B!(B,alpha,m,n,k,X,t)
-                
-            else
-
-                dx = (transpose(X[2:end,:]) - transpose(X[1:end-1,:]))
-                
-                for j = 1:m-1
-                    dt = t[j+1]-t[j]
-                    for i = 1:n
-                        dx[i,j] = dx[i,j]/dt
-                    end
-                end
-                
-                xin = $elty(0.5)*(transpose(X[1:end-1,:]) + transpose(X[2:end,:]))
-                
-                u, s, v = svd(xin,thin = true)
-                u1 = u[:,1:k]
-                s1 = diagm(s[1:k])
-                v1 = v[:,1:k]
-                atilde = u1'*dx*v1/s1
-                alpha = eigvals(atilde)
-                B = zeros(Complex{$elty},k,n)
-                
-                dmdl2B!(B,alpha,m,n,k,X,t)
-
+        dx = (transpose(X[2:end,:]) - transpose(X[1:end-1,:]))
+        
+        for j = 1:m-1
+            dt = t[j+1]-t[j]
+            for i = 1:n
+                dx[i,j] = dx[i,j]/dt
             end
-
-            return alpha, B
         end
+        
+        xin = Tr(0.5)*(transpose(X[1:end-1,:]) + transpose(X[2:end,:]))
+        
+        u, s, v = svd(xin,thin = true)
+        u1 = u[:,1:k]
+        s1 = diagm(s[1:k])
+        v1 = v[:,1:k]
+        atilde = u1'*dx*v1/s1
+        alpha = eigvals(atilde)
+        B = zeros(T,k,n)
+        
+        dmdl2B!(B,alpha,m,n,k,X,t)
+
     end
+
+    return alpha, B
 end
+
 
 ###########################################################
 # error measure

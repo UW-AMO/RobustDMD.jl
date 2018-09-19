@@ -10,10 +10,10 @@ include("DMDUtil.jl")
 m = 100;    # temporal dimension
 n = 100;    # spatial dimension
 k = 3;      # number of modes
-sigma = 1e-4
-mu = 100
+sigma = 1e-4;
+mu = 100;
 # generate data
-X, t, alphat, betat = genDMD(m, n, k, sigma, mu; seed=123456);
+X, Xt, t, alphat, betat = genDMD(m, n, k, sigma, mu; seed=123456);
 
 #--------------------------------------------------------------------
 # Initial Guess
