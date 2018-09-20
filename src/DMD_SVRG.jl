@@ -20,7 +20,7 @@ function DMD_SVRG_Options(τ, η, params; itm=1000, tol=1e-5, ptf=100)
 
 	fars = zeros(T, n);
 	Gars = zeros(T, 2*k, n);
-	gars = col_view(Gs);
+	gars = col_view(Gars);
 
 	return DMD_SVRG_Options(τ, η, itm, tol, ptf, fars, Gars, gars)
 end
@@ -49,11 +49,15 @@ function solveDMD_withSVRG(vars, params, svars, opts)
 	tol  = opts.tol;
 	ptf  = opts.ptf;
 
+	obj_his = zeros(T, itm);
+	err_his = zeros(T, itm);
+
 	# first full step
 	# initialize the gradient (might take a while)
 	update_P!(vars, params);
 	update_PQR!(vars, params, svars);
 	update_B!(vars, params, svars);
+	update_R!(vars, params);
 	for i = 1:n
 		fars[i] = objective(ar, vars, params, svars, i,
 			updateP=false, updateB=false, updateR=false);
@@ -61,7 +65,8 @@ function solveDMD_withSVRG(vars, params, svars, opts)
 			updateP=false, updateB=false, updateR=false);
 	end
 	tfar = sum(fars);
-	sum!(tgar, opts.Gars, 2);
+	sum!(tgar, opts.Gars); @show vecnorm(gars[1]);
+	# update alpha
 	copy!(dar, tgar); scale!(dar, η/n);
 	broadcast!(-, ar, ar, dar);
 	
@@ -73,7 +78,7 @@ function solveDMD_withSVRG(vars, params, svars, opts)
 		update_P!(vars, params);
 		update_PQR!(vars, params, svars);
 		# random sample columns
-		randperm!(ind); fill!(dgar, T(0.0)); dfar = T(0.0);
+		shuffle!(ind); fill!(dgar, T(0.0)); dfar = T(0.0);
 		for i = 1:τ
 			id = ind[i];
 			# calcualte the objecitve
@@ -99,10 +104,13 @@ function solveDMD_withSVRG(vars, params, svars, opts)
 		# update information
 		err = vecnorm(dar);
 		noi = noi + 1;
+		obj_his[noi] = tfar;
+		err_his[noi] = err;
 
 		# print information
 		noi % ptf == 0 && @printf("iter %5d, obj %1.2e, err %1.2e\n",
 			noi, tfar, err);
 		noi ≥ itm && break;
 	end
+	return obj_his[1:noi], err_his[1:noi]
 end
