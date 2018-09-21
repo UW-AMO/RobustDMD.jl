@@ -1,9 +1,9 @@
-# unit test he SVRG solver
+# unit test he BFGS solver
 
 include("DMDType.jl")
 include("DMDUtil.jl")
 include("DMDFunc.jl")
-include("DMD_SVRG.jl")
+include("DMD_BFGS.jl")
 
 #--------------------------------------------------------------------
 # Generate DMD Synthetic Data
@@ -35,11 +35,10 @@ copy!(vars.B, B0);
 #--------------------------------------------------------------------
 # Apply Solver
 #--------------------------------------------------------------------
-τ = 100;
-η = 1e-3;
-itm = 10000;
+σ   = 1e-3;
+itm = 1000;
 tol = 1e-6;
-ptf = 100;
-opts = DMD_SVRG_Options(τ, η, params, itm=itm, tol=tol, ptf=ptf);
+ptf = 10;
+opts = DMD_BFGS_Options(σ, params, itm=itm, tol=tol, ptf=ptf);
 
-obj_his, err_his = solveDMD_withSVRG(vars, params, svars, opts);
+obj_his, err_his = solveDMD_withBFGS(vars, params, svars, opts);
