@@ -27,21 +27,21 @@ function DMD_BFGS_Options(σ, params; itm=100, tol=1e-5, ptf=10)
 	par  = zeros(T, 2*k);
 	sar  = zeros(T, 2*k);
 	yar  = zeros(T, 2*k);
-	Har  = diagm(fill(σ, 2*k));
+	Har  = diagm(0 => fill(σ, 2*k));
 
 	return DMD_BFGS_Options(itm, tol, ptf, ar, nar,
 		gar, ngar, par, sar, yar, Har)
 end
 
 # BFGS solver
-function solveDMD_withBFGS(vars, params, svars, opts)
+function solveDMD_withBFGS(params, opts)
 	# load all the variables
 	T    = typeof(real(params.X[1]));
 	itm  = opts.itm;
 	tol  = opts.tol;
 	ptf  = opts.ptf;
 
-	ar   = opts.ar; copy!(ar, vars.ar);
+	ar   = params.ar;
 	nar  = opts.nar;
 	gar  = opts.gar;
 	ngar = opts.ngar;
@@ -51,40 +51,33 @@ function solveDMD_withBFGS(vars, params, svars, opts)
 	Har  = opts.Har;
 
 	# first gradient step
-	obj = objective(ar, vars, params, svars);
-	gradient!(ar, gar, vars, params, svars,
-		updateP=false, updateB=false, updateR=false);
-	err = vecnorm(gar, Inf);
+	nobj = aBFunc(params);
+	aBGrad(ngar, params);
+	err = norm(ngar, Inf);
 	noi = 0;
-
-	@show obj
-	@show err
 
 	obj_his = zeros(T, itm);
 	err_his = zeros(T, itm);
 
 	while err ≥ tol
 		# calculate the direction
-		BLAS.gemv!('N', T(-1.0), Har, gar, T(0.0), par);
-
+		BLAS.gemv!('N', T(-1.0), Har, ngar, T(0.0), par);
 		# decend line search
 		η = 1.0;
-		copy!(nar, ar); BLAS.axpy!(η, par, nar);
-		nobj = objective(nar, vars, params, svars);
-		while nobj ≥ obj
+		copyto!(nar, ar); BLAS.axpy!(η, par, ar);
+		obj = aBFunc(params);
+		while obj ≥ nobj
 			η *= 0.5;
 			η < 1e-10 && break;
-			copy!(nar, ar); BLAS.axpy!(η, par, nar);
-			nobj = objective(nar, vars, params, svars);
+			copyto!(ar, nar); BLAS.axpy!(η, par, ar);
+			obj = aBFunc(params);
 		end
 
 		# update gradient
-		gradient!(nar, ngar, vars, params, svars,
-			updateP=false, updateB=false, updateR=false);
-
+		aBGrad(gar, params);
 		# update differences
-		broadcast!(-, sar, nar, ar); copy!(ar, nar);
-		broadcast!(-, yar, ngar, gar); copy!(gar, ngar);
+		sar .= ar - nar; copyto!(nar, ar);
+		yar .= gar - ngar; copyto!(ngar, gar);
 
 		# update Hessian approximation
 		ρ = T(1.0)/dot(yar, sar);
@@ -99,8 +92,8 @@ function solveDMD_withBFGS(vars, params, svars, opts)
 		end
 
 		# update information
-		obj = nobj;
-		err = vecnorm(par, Inf);
+		nobj = obj;
+		err = norm(par, Inf);
 		noi = noi + 1;
 
 		obj_his[noi] = obj;

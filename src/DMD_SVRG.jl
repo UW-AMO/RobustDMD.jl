@@ -26,7 +26,7 @@ function DMD_SVRG_Options(τ, η, params; itm=1000, tol=1e-5, ptf=100)
 end
 
 # SVRG solver
-function solveDMD_withSVRG(vars, params, svars, opts)
+function solveDMD_withSVRG(params, opts)
 	# load all the variables
 	τ    = opts.τ;
 	η    = opts.η;
@@ -34,7 +34,7 @@ function solveDMD_withSVRG(vars, params, svars, opts)
 	k    = params.k;
 	T    = typeof(real(params.X[1]));
 
-	ar   = vars.ar;
+	ar   = params.ar;
 	dar  = zeros(T, 2*k);
 	ind  = collect(1:n);
 
@@ -54,55 +54,43 @@ function solveDMD_withSVRG(vars, params, svars, opts)
 
 	# first full step
 	# initialize the gradient (might take a while)
-	update_P!(vars, params);
-	update_PQR!(vars, params, svars);
-	update_B!(vars, params, svars);
-	update_R!(vars, params);
-	for i = 1:n
-		fars[i] = objective(ar, vars, params, svars, i,
-			updateP=false, updateB=false, updateR=false);
-		gradient!(ar, gars[i], vars, params, svars, i,
-			updateP=false, updateB=false, updateR=false);
+	for id = 1:n
+		fars[id] = abFunc(params, id);
+		abGrad(gars[id], params, id);
 	end
 	tfar = sum(fars);
-	sum!(tgar, opts.Gars); @show vecnorm(gars[1]);
+	sum!(tgar, opts.Gars);
 	# update alpha
-	copy!(dar, tgar); scale!(dar, η/n);
-	broadcast!(-, ar, ar, dar);
-	
-	err  = vecnorm(dar);
+	copyto!(dar, tgar); dar .*= η/n;
+	ar .-= dar;
+
+	err  = sqrt(sum(abs2, dar));
 	noi  = 0;
 
 	while err ≥ tol
-		# update information corresponding to alpha
-		update_P!(vars, params);
-		update_PQR!(vars, params, svars);
 		# random sample columns
 		shuffle!(ind); fill!(dgar, T(0.0)); dfar = T(0.0);
 		for i = 1:τ
 			id = ind[i];
 			# calcualte the objecitve
-			rfar = objective(ar, vars, params, svars, id,
-				updateP=false, updateB=true, updateR=true);
+			rfar = abFunc(params, id);
 			dfar = dfar + rfar - fars[id];
 			fars[id] = rfar;
 			# calcualte the gradient
-			gradient!(ar, rgar, vars, params, svars, id,
-				updateP=false, updateB=false, updateR=false);
-			broadcast!(+, dgar, dgar, rgar);
-			broadcast!(-, dgar, dgar, gars[id]);
-			copy!(gars[id], rgar);
+			dgar .-= gars[id];
+			abGrad(gars[id], params, id)
+			dgar .+= gars[id];
 		end
 		# update alpha
-		copy!(dar, tgar); scale!(dar, η/n);
+		copyto!(dar, tgar); dar.*= η/n;
 		BLAS.axpy!(η/τ, dgar, dar);
-		broadcast!(-, ar, ar, dar);
+		ar .-= dar;
 		# update tfar and tgar
-		tfar = tfar + dfar;
-		broadcast!(+, tgar, tgar, dgar);
+		tfar  += dfar;
+		tgar .+= dgar;
 
 		# update information
-		err = vecnorm(dar);
+		err = sqrt(sum(abs2, dar));
 		noi = noi + 1;
 		obj_his[noi] = tfar;
 		err_his[noi] = err;
