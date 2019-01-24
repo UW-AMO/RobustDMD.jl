@@ -40,11 +40,13 @@ Random.randn!(params.ar);
 #
 # Apply Solver
 #------------------------------------------------------------------------------
-τ = 100;
-η = 1e-3;
-itm = 10000;
+τ = 10;
+η = 1e-1;
+itm = 40000;
 tol = 1e-6;
-ptf = 100;
+ptf = 1000;
 opts = DMD_SVRG_Options(τ, η, params, itm=itm, tol=tol, ptf=ptf);
 
 obj_his, err_his = solveDMD_withSVRG(params, opts);
+
+println(besterrperm(params.a,at))

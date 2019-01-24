@@ -4,6 +4,7 @@ using LinearAlgebra
 using Random
 using Printf
 using Optim
+using Munkres
 
 @doc """
 Utility functions for evaluating exponential basis, 
@@ -343,41 +344,43 @@ function dmdexactestimate(m,n,k,X,t;dmdtype="trap")
 end
 
 
-# ###########################################################
-# # error measure
-# function besterrperm(v1,v2)
-#     n = length(v1)
-#     A = Array{typeof(abs(v1[1]))}(n,n)
-#     for j = 1:n
-#         for i = 1:n
-#             A[i,j] = abs(v1[i]-v2[j])
-#         end
-#     end
-#     if any(isnan,A)
-#         println("besterrperm: NaN in A, abort")
-#         return Inf
-#     end
-        
-#     p = munkres(A)
-#     err = 0.0
-#     for i = 1:n
-#         err = err + abs(v1[i]-v2[p[i]])
-#     end
-#     return err
-# end
+###########################################################
+# error measure
+function besterrperm(v1,v2)
+    n = length(v1)
+    A = Array{typeof(abs(v1[1]))}(undef,n,n)
+    for j = 1:n
+        for i = 1:n
+            A[i,j] = abs(v1[i]-v2[j])
+        end
+    end
+    if any(isnan,A)
+        println("besterrperm: NaN in A, abort")
+        return Inf
+    end
+      
+    p = munkres(A)
+    err = 0.0
+    for i = 1:n
+        err = err + abs(v1[i]-v2[p[i]])
+    end
+    return err
+end
 
-# function besterrperm_wi(v1,v2)
-#     n = length(v1)
-#     A = Array{typeof(abs(v1[1]))}(n,n)
-#     for j = 1:n
-#         for i = 1:n
-#             A[i,j] = abs(v2[i]-v1[j])
-#         end
-#     end
-#     p = munkres(A)
-#     err = 0.0
-#     for i = 1:n
-#         err = err + abs(v1[p[i]]-v2[i])
-#     end
-#     return err, p
-# end
+function besterrperm_wi(v1,v2)
+    n = length(v1)
+    A = Array{typeof(abs(v1[1]))}(undef,n,n)
+    for j = 1:n
+        for i = 1:n
+            A[i,j] = abs(v2[i]-v1[j])
+        end
+    end
+    p = munkres(A)
+    err = 0.0
+    for i = 1:n
+        err = err + abs(v1[p[i]]-v2[i])
+    end
+    return err, p
+end
+
+
