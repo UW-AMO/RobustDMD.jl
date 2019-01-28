@@ -42,10 +42,14 @@ mutable struct DMDParams{T<:AbstractFloat}
     # temp variables
     tv::Vector{Complex{T}}
     tM::Matrix{Complex{T}}
+    #
+    # inner solve options
+    inner_opts::Any
 end
 
 # constructors
-function DMDParams(k, X, t, lossFunc, lossGrad)
+function DMDParams(k, X, t, lossFunc, lossGrad;
+                   inner_opts=Optim.Options())
     m,n = size(X);
     x   = col_view(X);
     #
@@ -70,29 +74,6 @@ function DMDParams(k, X, t, lossFunc, lossGrad)
     tM = zeros(Tx, k, n);
     #
     return DMDParams(m, n, k, X, x, t, lossFunc, lossGrad,
-        a, P, B, b, R, r, ar, br, tv, tM)
+        a, P, B, b, R, r, ar, br, tv, tM, inner_opts)
 end
 
-# mutable struct DMDSVars{T<:AbstractFloat}
-#     # variables used for solve B, b
-#     PQ::Matrix{Complex{T}}
-#     PR::Matrix{Complex{T}}
-#     tP::Vector{Complex{T}}
-#     # variables used for gradient of a
-#     tM::Matrix{Complex{T}}
-# end
-
-# # constructors
-# function DMDSVars(params)
-#     m = params.m;
-#     n = params.n;
-#     k = params.k;
-#     T = eltype(params.X);
-
-#     PQ = zeros(T, m, k);
-#     PR = zeros(T, k, k);
-#     tP = zeros(T, k);
-#     tM = zeros(T, k, n);
-
-#     return DMDSVars(PQ, PR, tP, tM)
-# end

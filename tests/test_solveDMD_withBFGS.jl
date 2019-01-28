@@ -40,10 +40,10 @@ Random.randn!(params.ar);
 #
 # Apply Solver
 #------------------------------------------------------------------------------
-σ   = 1e-3;
+sigma   = 1e-3;
 itm = 1000;
 tol = 1e-6;
 ptf = 10;
-opts = DMD_BFGS_Options(σ, params, itm=itm, tol=tol, ptf=ptf);
+opts = DMD_BFGS_Options(sigma, params, itm=itm, tol=tol, ptf=ptf);
 
 obj_his, err_his = solveDMD_withBFGS(params, opts);

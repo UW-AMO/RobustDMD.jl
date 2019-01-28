@@ -290,7 +290,8 @@ end
 
 # ###########################################################
 # # exact and trapezoidal dmd --- for generating initial guess
-function dmdexactestimate(m,n,k,X,t;dmdtype="trap")
+function dmdexactestimate(m,n,k,X,t;dmdtype="exact",
+                          uselowrank=false,niter=0)
     # use the trapezoidal rule and exact DMD
     # to estimate eigenvalues
     # Assumes that the times are in order,
@@ -299,48 +300,57 @@ function dmdexactestimate(m,n,k,X,t;dmdtype="trap")
     Tr = typeof(real(X[1]));
 
     if (dmdtype == "exact")
-        x1 = transpose(X[1:end-1,:])
-        x2 = transpose(X[2:end,:])
-
         dt = t[2]-t[1]
-        
-        F = svd(x1,full=false);
-        u1 = F.U[:,1:k]
-        s1 = diagm(0 => F.S[1:k])
-        v1 = F.V[:,1:k]
-        atilde = u1'*x2*v1/s1
-        alpha = eigvals(atilde)
-        alpha = log(alpha)/dt
+
+        if uselowrank
+            x1op = transpose(LinearOperator(X[1:end-1,:]))
+            F = psvdfact(x1op,rank=k,sketch = :randn,
+                         sketch_randn_niter = niter);
+        else
+            x1 = transpose(X[1:end-1,:])
+            F = svd(x1,full=false);
+        end
+        u = F.U[:,1:k]; s = Diagonal(Array{T}(F.S[1:k]));
+        v = F.Vt[1:k,:]';
+
+        atilde = u'*(transpose(X[2:end,:])*v)/s
+        a = eigvals(atilde)
+        a = log.(a)/dt
         
         B = zeros(T,k,n)
-        dmdl2B!(B,alpha,m,n,k,X,t)
+        dmdl2B!(B,a,m,n,k,X,t)
         
+    elseif (dmdtype == "trap")
+
+        if uselowrank
+            x1op = LinearOperator(X[1:end-1,:])
+            x2op = LinearOperator(X[2:end,:])
+            midop = transpose(x1op)+transpose(x2op)
+            F = psvdfact(midop,rank=k,sketch=:randn,
+                         sketch_randn_niter=niter)
+        else
+            mid = transpose(X[1:end-1,:] + X[2:end,:])
+            F = svd(mid, full=false)
+        end        
+        
+        u = F.U[:,1:k]
+        s = Diagonal(Array{T}(F.S[1:k]))
+        dt = Diagonal(Array{T}(2.0./(t[2:end]-t[1:end-1])))
+        v = dt*(F.Vt[1:k,:]')
+
+        atilde = u'*(transpose(X[2:end,:])*v - transpose(X[1:end-1,:])*v)/s
+        a = eigvals(atilde)
+        B = zeros(T,k,n)
+        
+        dmdl2B!(B,a,m,n,k,X,t)
+
     else
 
-        dx = (transpose(X[2:end,:]) - transpose(X[1:end-1,:]))
-        
-        for j = 1:m-1
-            dt = t[j+1]-t[j]
-            for i = 1:n
-                dx[i,j] = dx[i,j]/dt
-            end
-        end
-        
-        xin = Tr(0.5)*(transpose(X[1:end-1,:]) + transpose(X[2:end,:]))
-        
-        F = svd(xin, full=false)
-        u1 = F.U[:,1:k]
-        s1 = diagm(0 => F.S[1:k])
-        v1 = F.V[:,1:k]
-        atilde = u1'*dx*v1/s1
-        alpha = eigvals(atilde)
-        B = zeros(T,k,n)
-        
-        dmdl2B!(B,alpha,m,n,k,X,t)
+        error("unknown value for dmdtype")
 
     end
 
-    return alpha, B
+    return a, B
 end
 
 

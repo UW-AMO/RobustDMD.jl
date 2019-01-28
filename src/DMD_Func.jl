@@ -57,6 +57,11 @@ function bGrad(gbr, params, id)
     gbr[2:2:end] .*= Tr(-2.0);
 end
 
+
+function projbl2(params, id)
+    copyto!(params.b[id],params.P\params.x[id])
+end
+
 function projb(params, id)
     # define the function and gradient interface for optim
     function f(br)
@@ -68,9 +73,12 @@ function projb(params, id)
         copyto!(params.br[id], br);
         bGrad(gbr, params, id);
     end
-    #
-    res = optimize(f, g!, params.br[id], BFGS());
+    
+    res = optimize(f, g!, params.br[id], BFGS(),
+                   params.inner_opts);
+    
     copyto!(params.br[id], res.minimizer);
+
 end
 
 function projB(params)
