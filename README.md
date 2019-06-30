@@ -10,6 +10,10 @@ julia.
 
 ## Changelog
 
+- Update June 30, 2019
+-- Merge in julia-one branch, which should still
+be neutral to data type and is otherwise simpler than
+the original.
 - Update August 13, 2018
 -- Minor change to interface of DMDParams
 -- Complex{Float32} is now supported in addition to
