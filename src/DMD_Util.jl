@@ -249,7 +249,7 @@ function simDMD(m, n, k, T; seed=123)
     c1 = one(Complex{T});
     #
     at = im*randn(T,k);       # temporal modes
-    bt = c1*T(6.0)*randn(T,k);   # spatial modes
+    bt = complex((rand(T,k))*n/10.0);   # spatial modes
     # phit = exp(t⋅alphatᵀ), psit = sin(s⋅betatᵀ)
     Pt = zeros(Complex{T},m,k); update_P_general!(Pt, t, at, exp);
     Bt = zeros(Complex{T},k,n); update_P_general!(Bt, bt, s, sin);
