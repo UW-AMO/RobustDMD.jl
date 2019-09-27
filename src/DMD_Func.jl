@@ -154,6 +154,33 @@ function aBGrad(gar, params)
     gar[2:2:end] .*= Tr(-2.0);
 end
 
+function aBFuncGrad(gar, params)
+    # update P
+    update_P!(params);
+    #
+    T = eltype(params.X);
+    Tr = typeof(real(params.X[1]));
+    # partially minimize over B
+    projB(params);
+    # update residual
+    BLAS.gemm!('N', 'N', T(1.0), params.P, params.B, T(0.0), params.R);
+    params.R .-= params.X
+    #
+    params.lossGrad(params.R);
+    #
+    ga = vr2vc(gar);
+    #
+    params.R .*= t;
+    BLAS.gemm!('T', 'N', T(1.0), params.P, params.R, T(0.0), params.tM);
+    params.tM .*= params.B;
+    sum!(ga, params.tM);
+    #
+    gar[1:2:end] .*= Tr(2.0);
+    gar[2:2:end] .*= Tr(-2.0);
+
+    return BFunc(params)
+end
+
 ###########################################################
 # gradient w.r.t. alpha
 # function gradient!(ar, gar, vars, params, svars;
