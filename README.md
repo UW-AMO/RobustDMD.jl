@@ -10,6 +10,9 @@ julia.
 
 ## Changelog
 
+- Update September 27, 2019
+-- clean up packaging (thanks, Maarten Pronk)
+-- move examples to example folder, delete broken examples
 - Update June 30, 2019
 -- Merge in julia-one branch, which should still
 be neutral to data type and is otherwise simpler than
@@ -23,6 +26,16 @@ should be acceptable but that code will not be as efficient
 BLAS dependent).
 -- Stylistic changes to be more julian
 
+## TODO
+
+- Re-implement proximal gradient descent and trimming
+outer solvers (lost in julia one re-write)
+- Write a more robust inner solver (black box BFGS
+is inappropriate for Huber norm)
+- Make proper unit tests for existing solvers (SVRG
+and BFGS)
+
+
 ## Install
 
 You can install this package with
@@ -34,7 +47,7 @@ or a particular version by modifying the url.
 ## Requirements
 
 The examples require the Munkres package and will work on 
-julia v0.5 and later. Otherwise the library is self-contained.
+julia v1.0 and later. Otherwise the library is self-contained.
 
 > Pkg.add("Munkres")
 
@@ -123,48 +136,39 @@ solve a particular problem, the user (1)
 specifies the fitting problem data and parameters,
 (2) specifies a penalty type, (3) specifies an
 inner solver, and then (4) runs the outer solver.
-The types DMDParams, DMDVariables, and 
-DMDVPSolverVariables specify these choices.
-See the documentation of DMDParams, DMDVariables,
-and DMDVPSolverVariables in DMDType.jl for specifics.
+The type DMDParams specifies these choices.
+See the documentation of DMDParams for specifics.
 Additionally, a prox operation may be specified
-for the outer problem. We recommend at least
+for the outer problem in certain solvers (SVRG
+for now). We recommend at least
 using a prox which forces the real part of alpha
 to be less than some upper bound (for numerical
 stability) but any type of prox operation
-may be added. 
+may be added.
 
 Currently implemented loss functions:
 - l2 (Frobenius)
 - huber
-- student's T (currently not recommended)
 
-Currently implemented outer solvers (all allow a prox
+Currently implemented outer solvers (* allows a prox
 operation to be specified):
-- Proximal gradient descent
+- BFGS
 - Stochastic Variance Reduced Gradient (SVRG) 
-descent (for larger problems)
-- Trimming gradient descent
+descent (for larger problems) *
 
 Currently implemented inner solvers:
-- BFGS with warm starts and regularization
-- Closed form solution (LSQ, l2 penalty only! this
-simply solves the least squares problem for B
-using linear-algebraic methods)
+- Optim-based BFGS solver 
+
 
 ## Examples
 
-Each of the solvers is demonstrated in the files 
-DMDExamplePG.jl (proximal gradient), DMDExampleTrim.jl
-(trimming DMD), and DMDExampleSVRG.jl (SVRG solver).
-We also show how to use a generic solver for the outer
-problem by using the alphafunc and alphagrad! utilities
-by sending these to the same BFGS solver used for the 
-interior problem (see DMDExample.jl).
+See the examples folder for some examples of usage.
+This is work in progress.
 
 ## License
 
-The files in the "src" and "examples" directories are available under the MIT license.
+The files in the "src", "test", and "examples" directories are
+available under the MIT license.
 
 The MIT License (MIT)
 
