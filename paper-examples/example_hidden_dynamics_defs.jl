@@ -163,8 +163,7 @@ function dofits(xdat,t,eigs,kappa,optionsl2,optionshuber,optionstrim,
     copyto!(huberparams.a,ainit)
     
     # apply solver
-    obj_his2, err_his2 = solveDMD_withBFGS(huberparams, optionshuber);
-    #@time obj_his2, err_his2 = solveDMD_withPG(huberparams, optionsl2);
+    obj_his2, err_his2 = solveDMD_withPG(huberparams, optionshuber);
 
     #----------------------------------------------------  
     # l2 trimming trial

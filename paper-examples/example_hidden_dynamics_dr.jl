@@ -31,15 +31,11 @@ function prox_mr(ar)
     end
 end
 
-itm = 400;
 tol = 1e-6;
 ptf = 10000000;
-sigBFGS = 1.0;
-#optsl2 = DMD_BFGS_Options(sigma=sigBFGS,itm=itm, tol=tol, ptf=ptf);
-
 itml2 = 20000;
 optsl2 = DMD_PG_Options(itm=itml2, tol=tol, ptf=ptf,prox = prox_mr);
-optshub = DMD_BFGS_Options(sigma=sigBFGS,itm=itm, tol=tol, ptf=ptf);
+optshub = DMD_PG_Options(itm=itml2, tol=tol, ptf=ptf,prox = prox_mr);
 optstrim = DMD_PG_Options(itm=itml2, tol=tol, ptf=ptf,prox = prox_mr);
 
 # test parameters
