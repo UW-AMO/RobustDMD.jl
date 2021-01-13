@@ -204,13 +204,14 @@ for j = 1:nj
     end
 end
 
-fname = "results/simple_periodic_pg_out.jld"
+dirname = @__DIR__
+fname = dirname * "/results/simple_periodic_pg_out.jld"
 
 @printf "writing results to file %s\n" fname
 
 # save the results to file
 
-mkpath("results")
+mkpath(dirname * "/results")
 file = jldopen(fname,"w")
 file["errs"] = errs
 file["eigs_comp"] = eigs_comp

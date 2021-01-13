@@ -78,7 +78,7 @@ for j = 1:nj
     params[6,j] = w
     params[7,j] = nkeep
     
-    for i = 1:ntest
+    Threads.@threads for i = 1:ntest
         
         xdat = make_corrupt_data_sparse_spikes(xclean,sigma,mu,p)
         
@@ -87,10 +87,6 @@ for j = 1:nj
         
         @printf "test %d %d sparse spikes\n"  j i
         @printf "errs %e %e %e %e\n" err1 err2 err3 err4
-        @show eig1
-        @show eig2
-        @show eig3
-        @show eig4
         errs[1,i,1,j] = err1
         errs[2,i,1,j] = err2
         errs[3,i,1,j] = err3
@@ -108,10 +104,6 @@ for j = 1:nj
         
         @printf "test %d %d broken sensors\n"  j i
         @printf "errs %e %e %e %e\n" err1 err2 err3 err4
-        @show eig1
-        @show eig2
-        @show eig3
-        @show eig4
         
         errs[1,i,2,j] = err1
         errs[2,i,2,j] = err2
@@ -130,10 +122,6 @@ for j = 1:nj
         
         @printf "test %d %d bump\n"  j i
         @printf "errs %e %e %e %e\n" err1 err2 err3 err4
-        @show eig1
-        @show eig2
-        @show eig3
-        @show eig4
         
         errs[1,i,3,j] = err1
         errs[2,i,3,j] = err2

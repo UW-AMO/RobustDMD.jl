@@ -108,8 +108,6 @@ function make_corrupt_data_broken_sensors(xclean,sigma,mu,p)
     ncol = Integer(round(n*p))
     icols = sample(1:n,ncol,replace=false)
 
-    @show icols
-    
     noise = sigma*randn(m,n)
     noise[:,icols] .+= mu*randn(m,length(icols))
     xdat = xclean .+ noise
@@ -134,12 +132,10 @@ function dofits(xdat,t,eigs,kappa,optionsl2,optionshuber,optionstrim,
     #-------------------------------------------------------------
     m,n = size(xdat);
     
-    @time a0, B0 = dmdexactestimate(m, n, k, xdat, t);
+    a0, B0 = dmdexactestimate(m, n, k, xdat, t);
 
-    @time ainit, Binit = dmdexactestimate(m,n,k,xdat,t,dmdtype="trap")
+    ainit, Binit = dmdexactestimate(m,n,k,xdat,t,dmdtype="trap")
 
-    @show ainit
-    
     #----------------------------------------------------  
     # l2 Trial
     #----------------------------------------------------
@@ -153,7 +149,7 @@ function dofits(xdat,t,eigs,kappa,optionsl2,optionshuber,optionstrim,
     copyto!(l2params.a,ainit)
     
     # apply solver
-    @time obj_his1, err_his1 = solveDMD_withPG(l2params, optionsl2);
+    obj_his1, err_his1 = solveDMD_withPG(l2params, optionsl2);
 
     #----------------------------------------------------
     # huber Trial
@@ -167,7 +163,7 @@ function dofits(xdat,t,eigs,kappa,optionsl2,optionshuber,optionstrim,
     copyto!(huberparams.a,ainit)
     
     # apply solver
-    @time obj_his2, err_his2 = solveDMD_withBFGS(huberparams, optionshuber);
+    obj_his2, err_his2 = solveDMD_withBFGS(huberparams, optionshuber);
     #@time obj_his2, err_his2 = solveDMD_withPG(huberparams, optionsl2);
 
     #----------------------------------------------------  
@@ -184,10 +180,8 @@ function dofits(xdat,t,eigs,kappa,optionsl2,optionshuber,optionstrim,
     copyto!(trimparams.a,ainit)
     
     # apply solver
-    @time obj_his3, err_his3 = solveDMD_withPG(trimparams, optionstrim);
+    obj_his3, err_his3 = solveDMD_withPG(trimparams, optionstrim);
 
-    @show trimparams.ikeep
-    
     #--------------------------------------------------------------------
     # Evaluate Errors and Get Best Eigenvalue Permutation
     #--------------------------------------------------------------------

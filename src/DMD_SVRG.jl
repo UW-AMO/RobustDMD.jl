@@ -74,16 +74,16 @@ function solveDMD_withSVRG(params, opts)
 
     ind2 = collect(1:tau);
     
-    while err ≥ tol
+    while err >= tol
 	# random sample columns
 	sample!(ind,ind2); fill!(dgar, T(0.0)); dfar = T(0.0);
 	for i = 1:tau
 	    id = ind2[i];
-	    # calcualte the objecitve
+	    # calculate the objecitve
 	    rfar = abFunc(params, id);
 	    dfar = dfar + rfar - fars[id];
 	    fars[id] = rfar;
-	    # calcualte the gradient
+	    # calculate the gradient
 	    dgar .-= gars[id];
 	    abGrad(gars[id], params, id)
 	    dgar .+= gars[id];
@@ -108,7 +108,7 @@ function solveDMD_withSVRG(params, opts)
 	# print information
 	noi % ptf == 0 && @printf("iter %5d, obj %1.2e, err %1.2e\n",
 			          noi, tfar, err);
-	noi ≥ itm && break;
+	noi >= itm && break;
     end
     return obj_his[1:noi], err_his[1:noi]
 end

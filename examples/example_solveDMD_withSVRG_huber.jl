@@ -14,9 +14,8 @@ X, t, at, Bt = simDMD(m, n, k, T; seed=123456);
 sigma = 1.0e-6 # background noise level
 lds = 0.1 # larger deviation size
 ldf = 0.05 # frequency of larger deviations
-X1 = (X .+ randn(real(eltype(X)),size(X))*sigma
+Xdat = (X .+ randn(real(eltype(X)),size(X))*sigma
       .+ (rand(real(eltype(X)),size(X)) .< ldf)*lds)
-X2 = copy(X1)
 # specify the loss
 kappa = 10.0*sigma
 lossFunc1(r) = huber_func(r,kappa)
@@ -30,8 +29,8 @@ a0, B0 = dmdexactestimate(m, n, k, Xdat, t, dmdtype="trap");
 #
 # Create object
 #------------------------------------------------------------------------------
-params1 = DMDParams(k, X1, t, lossFunc1, lossGrad1);
-params2 = DMDParams(k, X2, t, lossFunc2, lossGrad2, inner_directl2=true);
+params1 = DMDParams(k, Xdat, t, lossFunc1, lossGrad1);
+params2 = DMDParams(k, Xdat, t, lossFunc2, lossGrad2, inner_directl2=true);
 copyto!(params1.a,a0)
 copyto!(params2.a,a0)
 
@@ -39,10 +38,10 @@ copyto!(params2.a,a0)
 # Apply Solver
 #------------------------------------------------------------------------------
 tau = 10;
-eta = 1e1;
-itm = 2000;
+eta = 2e1;
+itm = 5000;
 tol = 1e-7;
-ptf = 10;
+ptf = 100;
 
 function prox_stab(ar)
     # project for numerical stability
