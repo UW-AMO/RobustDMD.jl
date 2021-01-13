@@ -1,3 +1,7 @@
+import LinearAlgebra: BlasInt
+
+export DMDParams, QRStore
+
 # This file is available under the terms of the MIT License
 
 @doc """
@@ -32,30 +36,45 @@ mutable struct DMDParams{T<:AbstractFloat}
     P::Matrix{Complex{T}}
     B::Matrix{Complex{T}}
     b::Array{Vector{Complex{T}},1}
-    #
     R::Matrix{Complex{T}}
     r::Array{Vector{Complex{T}},1}
     #
     ar::Vector{T}
     br::Array{Vector{T},1}
-    #
+    # l2 direct storage
+    qra::Union{Nothing,Vector{Complex{T}}}
+    qrfact::Union{Nothing,QRPivoted{Complex{T},Array{Complex{T},2}}}
+    qrTemp::Union{Nothing,Matrix{Complex{T}}}
+    qrtemp::Union{Nothing,Array{Vector{Complex{T}},1}}
+    
     # temp variables
     tv::Vector{Complex{T}}
     tM::Matrix{Complex{T}}
+    tcnorm::Vector{T}
+    idsort::Vector{S} where S <: Integer
     #
     # inner solve options
+    inner_solver::Any
     inner_opts::Any
+    inner_directl2::Bool
+
+    # trimming
+    nkeep::Integer
+    ikeep::Any
 end
 
 # constructors
 function DMDParams(k, X, t, lossFunc, lossGrad;
-                   inner_opts=Optim.Options())
+                   inner_directl2::Bool=false,
+                   inner_opts=Optim.Options(),
+                   inner_solver=BFGS(),
+                   nkeep=size(X,2))
     m,n = size(X);
     x   = col_view(X);
     #
     Tx  = eltype(X);
     Tt  = eltype(t);
-    if Tx ≠ Tt
+    if Tx != Tt
         t = convert(Vector{Tx}, t);
     end
     #
@@ -72,8 +91,34 @@ function DMDParams(k, X, t, lossFunc, lossGrad;
     #
     tv = zeros(Tx, k);
     tM = zeros(Tx, k, n);
+    tMkeep = zeros(Tx, k, nkeep);
+    tcnorm = zeros(real(Tx),n)
+    idsort = Array{Int64}(undef,n)
     #
+
+    qra = nothing
+    qrfact = nothing
+    qrTemp = nothing
+    qrtemp = nothing
+
+    if inner_directl2
+        qra = copy(a); qra .= NaN;
+        qrfact = QRPivoted(copy(P),Array{Tx}(undef,min(m,k)),
+                           zeros(BlasInt,k))
+        qrTemp = copy(R)
+        qrtemp = col_view(qrTemp)
+    end
+    
+    ikeep = collect(1:nkeep)
+    
     return DMDParams(m, n, k, X, x, t, lossFunc, lossGrad,
-        a, P, B, b, R, r, ar, br, tv, tM, inner_opts)
+                     a, P, B, b,
+                     R, r, ar, br,
+                     qra, qrfact, qrTemp, qrtemp,
+                     tv, tM, tcnorm, idsort,
+                     inner_solver,
+                     inner_opts, inner_directl2,
+                     nkeep, ikeep)
 end
+
 

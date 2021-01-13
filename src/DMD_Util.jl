@@ -1,3 +1,5 @@
+export simDMD, dmdexactestimate, besterrperm, besterrperm_wi
+
 # This file is available under the terms of the MIT License
 
 using LinearAlgebra
@@ -63,156 +65,6 @@ function update_P_general!(P, t, a, f)
     BLAS.gemm!('N', 'T', c1, t, a, c0, P);
     map!(f, P, P);
 end
-
-# ############################################################
-# # update residuals
-# function update_R!(vars, params)
-#     T  = eltype(params.X);
-#     c0 = zero(T);
-#     c1 = one(T);
-
-#     BLAS.gemm!('N', 'N', c1, vars.P, vars.B, c0, vars.R);
-#     broadcast!(-, vars.R, vars.R, params.X);
-# end
-
-# function update_r!(vars, params, id)
-#     T  = eltype(params.X);
-#     c0 = zero(T);
-#     c1 = one(T);
-
-#     BLAS.gemm!('N', 'N', c1, vars.P, vars.b[id], c0, vars.r[id]);
-#     broadcast!(-, vars.r[id], vars.r[id], params.x[id]);
-# end
-
-# ############################################################
-# # update the QR factorization of P
-# function update_PQR!(vars, params, svars)
-#     P = vars.P;
-#     T = eltype(P);
-#     PQ = svars.PQ;
-#     PR = svars.PR;
-#     tP = svars.tP;
-
-#     c1 = one(T);
-#     c0 = zero(T);
-
-#     # calculate QR decomposition
-#     copy!(PQ, P);
-#     LAPACK.geqrf!(PQ, tP);
-#     LAPACK.orgqr!(PQ, tP);
-#     BLAS.gemm!('C', 'N', c1, PQ, P, c0, PR);
-# end
-
-# # solve upper triangular linear system
-# function upper_solve!(PR, b)
-#     k = length(b);
-#     # backsubtitution
-#     b[k] = b[k]/PR[k,k];
-#     for i = k-1:-1:1
-#         # calculate the rhs
-#         for j = i+1:k
-#             b[i] -= PR[i,j]*b[j];
-#         end
-#         b[i] = b[i]/PR[i,i];
-#     end
-# end
-
-
-# ############################################################
-# # update B, b
-# function update_B!(vars, params, svars)
-#     T  = eltype(params.X);
-#     c0 = zero(T);
-#     c1 = one(T);
-#     BLAS.gemm!('C', 'N', c1, svars.PQ, params.X, c0, vars.B);
-#     for i = 1:params.n
-#         upper_solve!(svars.PR, vars.b[i]);
-#     end
-# end
-
-# function update_b!(vars, params, svars, id)
-#     T  = eltype(params.X);
-#     c0 = zero(T);
-#     c1 = one(T);
-#     BLAS.gemv!('C', c1, svars.PQ, params.x[id], c0, vars.b[id]);
-#     upper_solve!(svars.PR, vars.b[id]);
-# end
-
-
-# function grad_ar!(gr, vars, params, svars)
-#     #
-#     # Helper routine: following the inner solve, 
-#     # this routine computes the gradient w.r.t alpha
-#     #
-#     # This routine assumes that alphar, B, and R 
-#     # are up-to-date
-#     #
-#     # NOTE: this function overwrites R to save space
-#     #
-
-#     t = params.t;
-#     P = vars.P;
-#     B = vars.B;
-#     R = vars.R;
-#     tM = svars.tM;
-
-#     T = eltype(params.X);
-
-#     # wrap complex array around galphar
-#     pr = pointer(gr);
-#     pc = convert(Ptr{T}, pr);
-#     gc = unsafe_wrap(Array, pc, params.k);
-#     # compute complex gradient
-#     c0 = zero(T);
-#     c1 = T(0.5);
-#     conj!(R);
-#     broadcast!(*, R, R, t);
-#     BLAS.gemm!('T', 'N', c1, P, R, c0, tM);
-#     broadcast!(*, tM, tM, B);
-#     BLAS.sum!(gc, tM);
-
-#     gc2gr!(gr, params.k);
-# end
-
-# function grad_ar!(gr, vars, params, svars, id)
-#     #
-#     # Helper routine: following the inner solve, 
-#     # this routine computes the gradient w.r.t alpha
-#     #
-#     # This routine assumes that alphar, B, and R 
-#     # are up-to-date
-#     #
-#     # NOTE: this function overwrites R to save space
-#     #
-
-#     t = params.t;
-#     P = vars.P;
-#     b = vars.b;
-#     r = vars.r;
-
-#     T = eltype(params.X);
-
-#     # wrap complex array around galphar
-#     pr = pointer(gr);
-#     pc = convert(Ptr{T}, pr);
-#     gc = unsafe_wrap(Array, pc, params.k);
-#     # compute complex gradient
-#     c0 = zero(T);
-#     c1 = T(0.5);
-#     conj!(r[id]);
-#     broadcast!(*, r[id], r[id], t);
-#     BLAS.gemv!('T', c1, P, r[id], c0, gc);
-#     broadcast!(*, gc, gc, b[id]);
-
-#     gc2gr!(gr, params.k);
-# end
-
-
-# function gc2gr!(gr, k)
-#     T = eltype(gr);
-#     scale!(gr, T(-2.0));
-#     BLAS.scal!(k, T(-1.0), gr, 2);
-# end
 
 function vc2vr(vc)
     T = eltype(real(vc[1]));
@@ -297,7 +149,6 @@ function dmdexactestimate(m,n,k,X,t;dmdtype="exact",
     # Assumes that the times are in order,
     # i.e. that t[i] < t[i+1]
     T  = eltype(X);
-    Tr = typeof(real(X[1]));
 
     if (dmdtype == "exact")
         dt = t[2]-t[1]

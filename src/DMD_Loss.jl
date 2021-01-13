@@ -1,3 +1,5 @@
+export l2_func, l2_grad!, huber_func, huber_grad!
+
 ###########################################################
 # l2 penalty
 function l2_func(r)

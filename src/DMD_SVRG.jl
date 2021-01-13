@@ -1,16 +1,14 @@
-using StatsBase
+export DMD_SVRG_Options, solveDMD_withSVRG
+
+using StatsBase, Printf
 
 # SVRG solver for large scale DMD problem
-mutable struct DMD_SVRG_Options{T<:AbstractFloat}
+mutable struct DMD_SVRG_Options
     tau::Integer	# sample size
-    eta::T		# step size
-    itm::Integer
-    tol::T
+    eta::AbstractFloat # step size
+    itm::Integer 
+    tol::AbstractFloat
     ptf::Integer
-    # pre-allocate variables
-    fars::Vector{T}
-    Gars::Matrix{T}
-    gars::Array{Vector{T},1}
     prox::Function
 end
 
@@ -19,19 +17,10 @@ function prox_null(x)
 end
 
 # constructor of the SVRG options
-function DMD_SVRG_Options(tau, eta, params; itm=1000, tol=1e-5, ptf=100,
+function DMD_SVRG_Options(tau, eta; itm=1000, tol=1e-5, ptf=100,
                           prox=prox_null::Function)
-    k = params.k;
-    T = typeof(real(params.X[1]));
 
-    tol  = T(tol);
-
-    fars = zeros(T, n);
-    Gars = zeros(T, 2*k, n);
-    gars = col_view(Gars);
-
-    return DMD_SVRG_Options(tau, eta, itm, tol, ptf, fars,
-                            Gars, gars, prox)
+    return DMD_SVRG_Options(tau, eta, itm, tol, ptf, prox)
 end
 
 # SVRG solver
@@ -50,8 +39,9 @@ function solveDMD_withSVRG(params, opts)
     dar  = zeros(T, 2*k);
     ind  = collect(1:n);
 
-    fars = opts.fars;
-    gars = opts.gars;
+    fars = zeros(T,n)
+    Gars = zeros(T,2*k,n)
+    gars = col_view(Gars)
     
     tfar = T(0.0); tgar = zeros(T, 2*k);
     dfar = T(0.0); dgar = zeros(T, 2*k);
@@ -71,7 +61,7 @@ function solveDMD_withSVRG(params, opts)
 	abGrad(gars[id], params, id);
     end
     tfar = sum(fars);
-    sum!(tgar, opts.Gars);
+    sum!(tgar, Gars);
     # update alpha
     copyto!(dar, tgar); dar .*= eta/n;
     copyto!(arold,ar);

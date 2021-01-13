@@ -1,3 +1,5 @@
+export DMD_PG_Options, solveDMD_withPG
+
 # This file is available under the terms of the MIT License
 
 mutable struct DMD_PG_Options{T<:AbstractFloat}
@@ -63,12 +65,16 @@ function solveDMD_withPG(params, opts)
     obj_his = zeros(itm)
     err_his = zeros(itm)
 
-    while err ≥ tol
-        eta = descent_PG!(arm1, ar, gar, obj, a_f, prox);
+    alphastart = 10.0
+
+    while err >= tol
+        eta = descent_PG!(arm1, ar, gar, obj, a_f, prox,
+                          alphastart=alphastart);
         prox(ar);
 
         obj = a_fg!(gar, ar);
         err = sqrt(sum(abs2,ar - arm1))/eta;
+        #err = sqrt(sum(abs2,ar - arm1));        
         #err = vecnorm(ar - arm1)
         copyto!(arm1, ar);
         noi += 1;
@@ -79,10 +85,11 @@ function solveDMD_withPG(params, opts)
 
         obj_his[noi] = obj
         err_his[noi] = err
-        noi ≥ itm && break;
+        noi >= itm && break;
+        alphastart = min(2*eta,10.0)
     end
-
-        return obj_his[1:noi], err_his[1:noi]
+    
+    return obj_his[1:noi], err_his[1:noi]
     
 end
 
@@ -90,10 +97,12 @@ end
 # Descent Line Search
 #--------------------------
 function descent_PG!(xm1, x, g, obj, f, prox;
-                     alphamin = 1e1*eps(eltype(real(x))),
-                     tol = 1e2*eps(eltype(real(x))) )
+                     alphamin = 1e1*eps(real(eltype((x)))),
+                     tol = 1e2*eps(real(eltype(x))),
+                     alphastart = 10.0)
+    T = real(eltype(x))
     n = length(x);
-    alpha = T(10.0);
+    alpha = T(alphastart);
     noi = 0;
     for i = 1:n
         x[i] = xm1[i] - alpha*g[i];

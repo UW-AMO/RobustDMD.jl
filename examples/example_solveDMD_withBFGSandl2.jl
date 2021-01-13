@@ -32,7 +32,7 @@ a0, B0 = dmdexactestimate(m, n, k, Xdat, t);
 #
 # Create Object
 #------------------------------------------------------------------------------
-params = DMDParams(k, Xdat, t, lossFunc, lossGrad);
+params = DMDParams(k, Xdat, t, lossFunc, lossGrad, inner_directl2=true);
  copyto!(params.a, a0);
 # copyto!(params.B, B0);
 #Random.randn!(params.ar);

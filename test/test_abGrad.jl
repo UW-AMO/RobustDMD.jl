@@ -103,3 +103,51 @@ if err < 1e-6
 else
 	println("aBGrad: Wrong, err: $err");
 end
+#
+# Evaluate aBGrad with trimming
+#------------------------------------------------------------------------------
+
+
+params = DMDParams(k, X, t, lossFunc, lossGrad, nkeep=80);
+
+#
+# Initialize with random vector
+#------------------------------------------------------------------------------
+copyto!(params.a, at);
+copyto!(params.B, Bt);
+
+trimstandard(params)
+
+function func(ar, params)
+	copyto!(params.ar, ar);
+	return aBFunc(params)
+end
+func(ar) = func(ar, params);
+#
+function grad(gar, ar, params)
+	copyto!(params.ar, ar);
+	aBGrad(gar, params);
+end
+grad(gar, ar) = grad(gar, ar, params);
+#
+ar = randn(k<<1);
+gar = zeros(k<<1);
+grad(gar, ar);
+#
+# finite difference method verification
+ϵ = 1e-8;
+ar_fd = zeros(k<<1);
+gar_fd = zeros(k<<1);
+#
+for i in eachindex(gar_fd)
+	copyto!(ar_fd, ar);
+	ar_fd[i] += ϵ;
+	gar_fd[i] = (func(ar_fd) - func(ar))/ϵ;
+end
+#
+err = sum(abs2, gar_fd - gar);
+if err < 1e-6
+	println("aBGrad trim: OK");
+else
+	println("aBGrad: Wrong, err: $err");
+end
