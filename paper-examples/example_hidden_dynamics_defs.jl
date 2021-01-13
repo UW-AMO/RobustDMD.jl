@@ -149,7 +149,7 @@ function dofits(xdat,t,eigs,kappa,optionsl2,optionshuber,optionstrim,
     copyto!(l2params.a,ainit)
     
     # apply solver
-    #obj_his1, err_his1 = solveDMD_withPG(l2params, optionsl2);
+    obj_his1, err_his1 = solveDMD_withPG(l2params, optionsl2);
     res = solveDMD_withOptimBFGS(l2params)
 
     #----------------------------------------------------
@@ -164,7 +164,7 @@ function dofits(xdat,t,eigs,kappa,optionsl2,optionshuber,optionstrim,
     copyto!(huberparams.a,ainit)
     
     # apply solver
-    #obj_his2, err_his2 = solveDMD_withPG(huberparams, optionshuber);
+    obj_his2, err_his2 = solveDMD_withPG(huberparams, optionshuber);
     res = solveDMD_withOptimBFGS(huberparams)
     #----------------------------------------------------  
     # l2 trimming trial
@@ -180,7 +180,7 @@ function dofits(xdat,t,eigs,kappa,optionsl2,optionshuber,optionstrim,
     copyto!(trimparams.a,ainit)
     
     # apply solver
-    #obj_his3, err_his3 = solveDMD_withPG(trimparams, optionstrim);
+    obj_his3, err_his3 = solveDMD_withPG(trimparams, optionstrim);
     res = solveDMD_withOptimBFGS(trimparams)
     #--------------------------------------------------------------------
     # Evaluate Errors and Get Best Eigenvalue Permutation

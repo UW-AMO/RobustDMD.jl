@@ -31,12 +31,15 @@ function prox_mr(ar)
     end
 end
 
-tol = 1e-6;
+tol = 1e-7;
 ptf = 10000000;
-itml2 = 20000;
-optsl2 = DMD_PG_Options(itm=itml2, tol=tol, ptf=ptf,prox = prox_mr);
-optshub = DMD_PG_Options(itm=itml2, tol=tol, ptf=ptf,prox = prox_mr);
-optstrim = DMD_PG_Options(itm=itml2, tol=tol, ptf=ptf,prox = prox_mr);
+itm = 1000;
+optsl2 = DMD_PG_Options(itm=itm, tol=tol,
+                        ptf=ptf,prox = prox_mr);
+optshub = DMD_PG_Options(itm=itm, tol=tol,
+                         ptf=ptf,prox = prox_mr);
+optstrim = DMD_PG_Options(itm=itm, tol=tol,
+                          ptf=ptf,prox = prox_mr);
 
 # test parameters
 
@@ -47,7 +50,7 @@ p = 0.05 # add spikes at this percentage of data points
 k = 4 # rank of fit
 
 nj = 5 # number of different levels of background noise
-ntest = 20
+ntest = 1
 
 nkeep = Integer(floor(0.8*length(x))) # number of sensors to keep when trimming
 
@@ -65,7 +68,6 @@ for j = 1:nj
     A = 1.0 # height of bump
     w = 10.0 # width of bump
     kappa = 5*sigma
-    nu = sqrt(mu)
     params[1,j] = sigma
     params[2,j] = mu
     params[3,j] = p

@@ -20,8 +20,8 @@ mederrs = dropdims(median(errs,dims=2),dims=2)
 tname = "sparse_noise"
 mederrs_l2 = mederrs[1,1,:]
 mederrs_huber = mederrs[2,1,:]
-mederrs_trim = mederrs[4,1,:]
-mederrs_exact = mederrs[3,1,:]
+mederrs_trim = mederrs[3,1,:]
+mederrs_exact = mederrs[4,1,:]
 
 ph = plot(sigmas, mederrs_l2, label="Global L2")
 plot!(sigmas, mederrs_huber, label="Huber")
@@ -41,8 +41,8 @@ savefig(ph,fname)
 tname = "broken_sensor"
 mederrs_l2 = mederrs[1,2,:]
 mederrs_huber = mederrs[2,2,:]
-mederrs_trim = mederrs[4,2,:]
-mederrs_exact = mederrs[3,2,:]
+mederrs_trim = mederrs[3,2,:]
+mederrs_exact = mederrs[4,2,:]
 
 ph = plot(sigmas, mederrs_l2, label="Global L2")
 plot!(sigmas, mederrs_huber, label="Huber")
@@ -62,8 +62,8 @@ savefig(ph,fname)
 tname = "bump"
 mederrs_l2 = mederrs[1,3,:]
 mederrs_huber = mederrs[2,3,:]
-mederrs_trim = mederrs[4,3,:]
-mederrs_exact = mederrs[3,3,:]
+mederrs_trim = mederrs[3,3,:]
+mederrs_exact = mederrs[4,3,:]
 
 ph = plot(sigmas, mederrs_l2, label="Global L2")
 plot!(sigmas, mederrs_huber, label="Huber")
