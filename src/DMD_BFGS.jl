@@ -16,7 +16,8 @@ function DMD_BFGS_Options(;sigma=10.0, itm=100, tol=1e-5,
 end
 
 # BFGS solver
-function solveDMD_withBFGS(params, opts)
+function solveDMD_withBFGS(params,opts)
+    
     # load all the variables
     T    = typeof(real(params.X[1]));
     itm  = opts.itm;

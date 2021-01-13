@@ -39,13 +39,7 @@ params = DMDParams(k, Xdat, t, lossFunc, lossGrad);
 #
 # Apply Solver
 #------------------------------------------------------------------------------
-sigma = 1e0;
-itm = 1000;
-tol = 1e-8;
-ptf = 10;
-opts = DMD_BFGS_Options(sigma=sigma, itm=itm, tol=tol, ptf=ptf);
-
-obj_his, err_his = solveDMD_withBFGS(params, opts);
+res = solveDMD_withOptimBFGS(params);
 
 
 @printf "%7.4e relative residual after BFGS\n" sqrt(dmdobjective(params)/lossFunc(X))
