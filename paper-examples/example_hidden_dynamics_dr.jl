@@ -50,7 +50,7 @@ p = 0.05 # add spikes at this percentage of data points
 k = 4 # rank of fit
 
 nj = 5 # number of different levels of background noise
-ntest = 1
+ntest = 20
 
 nkeep = Integer(floor(0.8*length(x))) # number of sensors to keep when trimming
 
