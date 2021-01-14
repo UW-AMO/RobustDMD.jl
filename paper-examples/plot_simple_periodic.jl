@@ -2,6 +2,8 @@ using JLD, Plots, Statistics
 
 pyplot() # plotting backend
 
+include("plot_defs.jl")
+
 # plot the data for the simple periodic example
 
 dirname = @__DIR__
@@ -19,9 +21,9 @@ mederrs_l2 = mederrs[1,:]
 mederrs_huber = mederrs[2,:]
 mederrs_exact = mederrs[3,:]
 
-ph = plot(sigmas, mederrs_l2, label="Global L2")
-plot!(sigmas, mederrs_huber, label="Huber")
-plot!(sigmas, mederrs_exact, label="Exact DMD")
+ph = plot(sigmas, mederrs_exact, label="Exact DMD")
+plot!(sigmas, mederrs_l2, label="Optimized DMD")
+plot!(sigmas, mederrs_huber, label="Robust DMD (Huber)")
 xaxis!("background noise",:log10)
 yaxis!("error in recovered eigenvalues",:log10)
 title!("Simple Periodic Example")

@@ -2,6 +2,8 @@ using JLD, Plots, Statistics
 
 pyplot() # plotting backend
 
+include("plot_defs.jl")
+
 # plot the data for the simple periodic example
 
 dirname = @__DIR__
@@ -23,10 +25,10 @@ mederrs_huber = mederrs[2,1,:]
 mederrs_trim = mederrs[3,1,:]
 mederrs_exact = mederrs[4,1,:]
 
-ph = plot(sigmas, mederrs_l2, label="Global L2")
-plot!(sigmas, mederrs_huber, label="Huber")
-plot!(sigmas, mederrs_trim, label="Trimming")
-plot!(sigmas, mederrs_exact, label="Exact DMD")
+ph = plot(sigmas, mederrs_exact, label="Exact DMD")
+plot!(sigmas, mederrs_l2, label="Optimized DMD")
+plot!(sigmas, mederrs_huber, label="Robust DMD (Huber)")
+plot!(sigmas, mederrs_trim, label="Robust DMD (Trimming)")
 xaxis!("background noise",:log10)
 yaxis!("error in recovered eigenvalues",:log10)
 title!("Sparse Large Deviations")
@@ -44,10 +46,10 @@ mederrs_huber = mederrs[2,2,:]
 mederrs_trim = mederrs[3,2,:]
 mederrs_exact = mederrs[4,2,:]
 
-ph = plot(sigmas, mederrs_l2, label="Global L2")
-plot!(sigmas, mederrs_huber, label="Huber")
-plot!(sigmas, mederrs_trim, label="Trimming")
-plot!(sigmas, mederrs_exact, label="Exact DMD")
+ph = plot(sigmas, mederrs_exact, label="Exact DMD")
+plot!(sigmas, mederrs_l2, label="Optimized DMD")
+plot!(sigmas, mederrs_huber, label="Robust DMD (Huber)")
+plot!(sigmas, mederrs_trim, label="Robust DMD (Trimming)")
 xaxis!("background noise",:log10)
 yaxis!("error in recovered eigenvalues",:log10)
 title!("Broken Sensors")
@@ -65,10 +67,10 @@ mederrs_huber = mederrs[2,3,:]
 mederrs_trim = mederrs[3,3,:]
 mederrs_exact = mederrs[4,3,:]
 
-ph = plot(sigmas, mederrs_l2, label="Global L2")
-plot!(sigmas, mederrs_huber, label="Huber")
-plot!(sigmas, mederrs_trim, label="Trimming")
-plot!(sigmas, mederrs_exact, label="Exact DMD")
+ph = plot(sigmas, mederrs_exact, label="Exact DMD")
+plot!(sigmas, mederrs_l2, label="Optimized DMD")
+plot!(sigmas, mederrs_huber, label="Robust DMD (Huber)")
+plot!(sigmas, mederrs_trim, label="Robust DMD (Trimming)")
 xaxis!("background noise",:log10)
 yaxis!("error in recovered eigenvalues",:log10)
 title!("Confounding Bump")

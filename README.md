@@ -1,15 +1,16 @@
 
 # Robust DMD in julia
 
-NOTE: this is a beta version and may contain bugs. The
-interface may be changed significantly in future releases.
-
 This repository contains an implementation of a robust
 version of the dynamic mode decomposition (DMD) in 
 julia. 
 
 ## Changelog
 
+- Update January 14, 2021. Overhaul of code
+-- More clean up of packaging
+-- Re-implementation of certain solvers and trimming
+-- Fixed several efficiency issues with L2-type penalties
 - Update September 27, 2019
 -- clean up packaging (thanks, Maarten Pronk)
 -- move examples to example folder, delete broken examples
@@ -25,6 +26,53 @@ should be acceptable but that code will not be as efficient
 (the single and double precision versions are heavily
 BLAS dependent).
 -- Stylistic changes to be more julian
+
+## Paper examples
+
+The paper-examples directory includes files for generating the
+figures in the paper "Robust and scalable methods for the
+dynamic mode decomposition"
+
+WARNING: the "hidden dynamics" example takes several hours
+to run. This example was designed to demonstrate the
+effectiveness of different penalties. Thus, a dumb
+and brute force optimization strategy was employed
+(start with an initialization from exact DMD and
+run thousands of steps of gradient descent for each
+example). In practice, the SVRG algorithm would usually
+outperform this approach significantly but the appropriate
+algorithm parameters can be data dependent.
+
+### running the examples
+
+For each example, there are two files to run
+
+- example_example_name_dr.jl which runs the data generation step and saves the data to a sub-folder called "results" within the paper-examples folder
+- plot_example_name.jl which makes a basic version of the figure after the driver has been run. The images are output to the sub-folder called "figures" within the paper-examples folder
+
+To run the examples, you wil have to first install
+the RobustDMD package and its dependencies. Then, these
+files can simply be included to run them (or run from
+the command line).
+
+If you are having difficulty reproducing the
+figures with the current version of the codes and
+your set-up, a Manifest file which contains the
+git commits of every piece of relevant code used
+to generate the actual figure (with julia version 1.5.3),
+is included in the top-level directory.
+To use this manifest file, first copy the file
+Manifest.toml.papersave to Manifest.toml.
+Then, start julia. Switch to the pkg mode
+by typing "]". Then, you can activate the package
+and install the exact versions of the packages
+used to generate the figures with
+
+```julia
+(@v1.5) pkg> activate .
+(RobustDMD) pkg> instantiate
+```
+You can then run the examples as described above.
 
 ## TODO
 
