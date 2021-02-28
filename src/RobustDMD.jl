@@ -14,6 +14,7 @@ include("DMD_Util.jl")
 include("DMD_BFGS.jl")
 include("DMD_OptimBFGS.jl")
 include("DMD_PG.jl")
+include("DMD_SPG.jl")
 include("DMD_SVRG.jl")
 
 end
