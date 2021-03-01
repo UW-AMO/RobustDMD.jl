@@ -10,12 +10,8 @@ mutable struct DMD_PG_Options{T<:AbstractFloat}
     prox::Function
 end
 
-function DMD_PG_prox_null(x)
-    return
-end
-
 function DMD_PG_Options(;itm=100,tol=1e-5,ptf=10,
-                        prox=DMD_PG_prox_null::Function)
+                        prox=prox_null::Function)
 
     return DMD_PG_Options(itm,tol,ptf,prox)
 end

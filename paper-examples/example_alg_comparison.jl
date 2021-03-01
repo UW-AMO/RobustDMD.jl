@@ -58,29 +58,6 @@ pg_obj_his, pg_err_his = solveDMD_withPG(pg_params, pg_opts);
 spg_obj_his, spg_err_his = solveDMD_withSPG(spg_params, spg_opts);
 svrg_obj_his, svrg_err_his = solveDMD_withSVRG(svrg_params, svrg_opts);
 
-# Write results
-# ------------------------------------------------------------------------------
-# dirname = @__DIR__
-# fname = dirname * "/results/alg_comparison_out.jld"
-# 
-# mkpath(dirname * "/results")
-# file = jldopen(fname, "w")
-# file["pg_opts"] = pg_opts;
-# file["pg_params"] = pg_params;
-# file["pg_obj_his"] = pg_obj_his;
-# file["pg_err_his"] = pg_err_his;
-# 
-# file["spg_opts"] = spg_opts;
-# file["spg_params"] = spg_params;
-# file["spg_obj_his"] = spg_obj_his;
-# file["spg_err_his"] = spg_err_his;
-# 
-# file["svrg_opts"] = svrg_opts;
-# file["svrg_params"] = svrg_params;
-# file["svrg_obj_his"] = svrg_obj_his;
-# file["svrg_err_his"] = svrg_err_his;
-# 
-# close(file)
 
 # Plot results
 # ------------------------------------------------------------------------------

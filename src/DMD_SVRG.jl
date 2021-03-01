@@ -13,10 +13,6 @@ mutable struct DMD_SVRG_Options
     prox::Function
 end
 
-function prox_null(x)
-    return
-end
-
 # constructor of the SVRG options
 function DMD_SVRG_Options(tau, eta; itm=1000, tol=1e-5, ptf=100,
                           true_obj=false,

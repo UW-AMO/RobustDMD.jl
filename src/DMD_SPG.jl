@@ -14,10 +14,6 @@ mutable struct DMD_SPG_Options
     prox::Function
 end
 
-function prox_null(x)
-    return
-end
-
 # constructor of the SPG options
 function DMD_SPG_Options(tau, eta; dms=500, itm=1000, tol=1e-5, ptf=100,
                          true_obj=false,

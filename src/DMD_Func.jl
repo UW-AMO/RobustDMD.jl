@@ -7,6 +7,12 @@ export dmdobjective, projBl2
 Functions for evaluating the objective and gradient.
 """
 
+function prox_null(x)
+    return
+end
+
+
+
 function dmdobjective(params;updatep=true)
     if updatep
         return aBFunc(params)
