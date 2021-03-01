@@ -4,6 +4,7 @@ authors = ["Travis Askham <askhamwhat@gmail.com>"]
 version = "0.0.1"
 
 [deps]
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LowRankApprox = "898213cb-b102-5a47-900c-97e73b919f73"
 Munkres = "4cefb923-2b6f-58c4-9e65-6821f26b7b51"

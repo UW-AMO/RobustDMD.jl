@@ -4,7 +4,7 @@ using RobustDMD, Printf, Random
 #------------------------------------------------------------------------------
 # dimensions
 m = 500;    # temporal dimension
-n = 100;    # spatial dimension
+n = 1000;    # spatial dimension
 k = 3;      # number of modes
 T = Float64;
 # generate data
@@ -39,7 +39,7 @@ copyto!(params2.a,a0)
 #------------------------------------------------------------------------------
 tau = 10;
 eta = 2e1;
-itm = 5000;
+itm = 1000;
 tol = 1e-7;
 ptf = 100;
 

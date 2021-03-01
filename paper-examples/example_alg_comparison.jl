@@ -46,7 +46,7 @@ tau = 20;
 eta = 5e-4;
 tol = 0.0;
 true_obj = true;
-pg_opts = DMD_PG_Options(itm=20, tol=tol, prox=prox_stab);
+pg_opts = DMD_PG_Options(itm=200, tol=tol, prox=prox_stab);
 spg_opts = DMD_SPG_Options(tau, eta, dms=100, itm=1000, tol=tol,
                            true_obj=true_obj, prox=prox_stab);
 svrg_opts = DMD_SVRG_Options(tau, eta, itm=1000, tol=tol, true_obj=true_obj,
@@ -68,9 +68,12 @@ spg_obj_his = [init_obj; spg_obj_his];
 svrg_obj_his = [init_obj; svrg_obj_his];
 min_obj = (1 - 1e-8) * min([pg_obj_his; spg_obj_his; svrg_obj_his]...);
 
+spg_inds = collect(tau * (0:length(spg_obj_his) - 1) .+ n); spg_inds[1] = 0;
+svrg_inds = collect(tau * (0:length(svrg_obj_his) - 1) .+ n); svrg_inds[1] = 0;
+
 ph = plot(n * (0:length(pg_obj_his) - 1), pg_obj_his .- min_obj, label="PG");
-plot!(tau * (0:length(spg_obj_his) - 1), spg_obj_his .- min_obj, label="SPG")
-plot!(tau * (0:length(svrg_obj_his) - 1), svrg_obj_his .- min_obj, label="SVRG")
+plot!(spg_inds, spg_obj_his .- min_obj, label="SPG")
+plot!(svrg_inds, svrg_obj_his .- min_obj, label="SVRG")
 xaxis!("number of solved subproblems")
 yaxis!("objective function",:log10)
 title!("Algorithm Comparison")

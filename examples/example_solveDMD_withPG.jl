@@ -4,7 +4,7 @@ using RobustDMD, Random, Printf
 #------------------------------------------------------------------------------
 # dimensions
 m = 500;    # temporal dimension
-n = 300;    # spatial dimension
+n = 1000;    # spatial dimension
 k = 3;      # number of modes
 T = Float64;
 sigman = 1e-3;
@@ -37,7 +37,7 @@ params = DMDParams(k, Xdat, t, lossFunc, lossGrad, inner_directl2=true);
 # Apply Solver
 #------------------------------------------------------------------------------
 
-itm = 200;
+itm = 2000;
 tol = 1e-10;
 ptf = 10;
 opts = DMD_PG_Options(itm=itm, tol=tol, ptf=ptf);

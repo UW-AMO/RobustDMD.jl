@@ -41,7 +41,10 @@ function solveDMD_withSPG(params, opts)
 
     fars = zeros(T, n)
     Gars = zeros(T, 2 * k, n)
-    gars = col_view(Gars)
+    gars = Array{typeof(view(Gars,:,1))}(undef,n)
+    for i = 1:n
+        gars[i] = view(Gars,:,i)
+    end
     
     tfar = T(0.0); tgar = zeros(T, 2 * k);
     dfar = T(0.0); dgar = zeros(T, 2 * k);
@@ -76,7 +79,7 @@ function solveDMD_withSPG(params, opts)
     
     while err >= tol
         # random sample columns
-        sample!(ind, ind2); fill!(tgar, T(0.0)); dfar = T(0.0);
+        sample!(ind, ind2, replace=false); fill!(tgar, T(0.0)); dfar = T(0.0);
         for i = 1:tau
             id = ind2[i];
             # calculate the objecitve

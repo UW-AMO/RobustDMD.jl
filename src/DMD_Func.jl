@@ -117,7 +117,11 @@ function abFunc(params, id)
     # update P
     update_P!(params);
     # partially minimize over b
-    projb(params, id);
+    if params.inner_directl2
+        projbl2(params,id);
+    else
+        projb(params,id);
+    end
     #
     return bFunc(params, id)
 end
@@ -142,7 +146,12 @@ function abGrad(gar, params, id)
     T = eltype(params.X);
     Tr = typeof(real(params.X[1]));
     # partially minimize over b
-    projb(params, id);
+
+    if params.inner_directl2
+        projbl2(params,id);
+    else
+        projb(params,id);
+    end
     # update residual
     BLAS.gemv!('N', T(1.0), params.P, params.b[id], T(0.0), params.r[id]);
     params.r[id] .-= params.x[id];

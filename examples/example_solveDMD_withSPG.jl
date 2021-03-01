@@ -4,7 +4,7 @@ using RobustDMD, Random, Printf
 # ------------------------------------------------------------------------------
 # dimensions
 m = 500;    # temporal dimension
-n = 100;    # spatial dimension
+n = 1000;    # spatial dimension
 k = 3;      # number of modes
 T = Float64;
 sigma = 1e-3;
@@ -22,7 +22,7 @@ end
 #
 # Create object
 # ------------------------------------------------------------------------------
-params = DMDParams(k, Xdat, t, lossFunc, lossGrad);
+params = DMDParams(k, Xdat, t, lossFunc, lossGrad, inner_directl2=true);
 #
 # Initial Guess
 # ------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ a0, B0 = dmdexactestimate(m, n, k, Xdat, t);
 #
 # Create Object
 # ------------------------------------------------------------------------------
-params = DMDParams(k, Xdat, t, lossFunc, lossGrad, inner_directl2=true);
+params = DMDParams(k, Xdat, t, lossFunc, lossGrad);
 copyto!(params.a, a0);
 copyto!(params.B, B0);
 # Random.randn!(params.ar);
@@ -41,7 +41,7 @@ copyto!(params.B, B0);
 tau = 10;
 eta = 1e1;
 dms = 500;
-itm = 2000;
+itm = 1000;
 tol = 1e-6;
 ptf = 10;
 
