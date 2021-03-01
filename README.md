@@ -10,7 +10,9 @@ julia.
 You can install this package by cloning the Git
 repository:
 
-> Pkg.add("https://github.com/UW-AMO/RobustDMD.jl.git")
+```
+julia> Pkg.add(url="https://github.com/UW-AMO/RobustDMD.jl.git")
+```
 
 or a particular version by modifying the url.
 
