@@ -10,7 +10,7 @@ m = 512;    # temporal dimension
 n = 1000;    # spatial dimension
 k = 3;      # number of modes
 T = Float64;
-sigma = 1e-3;
+sigma = 1e-2;
 # generate data
 X, t, at, Bt = simDMD(m, n, k, T; seed=123456);
 Xdat = X + sigma * Random.randn!(copy(X))
@@ -37,17 +37,19 @@ pg_params = DMDParams(k, Xdat, t, lossFunc, lossGrad);
 spg_params = DMDParams(k, Xdat, t, lossFunc, lossGrad);
 svrg_params = DMDParams(k, Xdat, t, lossFunc, lossGrad);
 
+init_obj = dmdobjective(pg_params, updatep=false);
+
 
 # Create solver options
 # ------------------------------------------------------------------------------
-tau = 10;
-eta = 5e-3;
+tau = 20;
+eta = 5e-4;
 tol = 0.0;
 true_obj = true;
 pg_opts = DMD_PG_Options(itm=20, tol=tol, prox=prox_stab);
-spg_opts = DMD_SPG_Options(tau, eta, itm=2000, tol=tol, true_obj=true_obj,
-                           prox=prox_stab);
-svrg_opts = DMD_SVRG_Options(tau, eta, itm=2000, tol=tol, true_obj=true_obj,
+spg_opts = DMD_SPG_Options(tau, eta, dms=100, itm=1000, tol=tol,
+                           true_obj=true_obj, prox=prox_stab);
+svrg_opts = DMD_SVRG_Options(tau, eta, itm=1000, tol=tol, true_obj=true_obj,
                              prox=prox_stab);
 
 # Get results
@@ -64,34 +66,39 @@ svrg_obj_his, svrg_err_his = solveDMD_withSVRG(svrg_params, svrg_opts);
 # mkpath(dirname * "/results")
 # file = jldopen(fname, "w")
 # file["pg_opts"] = pg_opts;
+# file["pg_params"] = pg_params;
 # file["pg_obj_his"] = pg_obj_his;
 # file["pg_err_his"] = pg_err_his;
 # 
 # file["spg_opts"] = spg_opts;
+# file["spg_params"] = spg_params;
 # file["spg_obj_his"] = spg_obj_his;
 # file["spg_err_his"] = spg_err_his;
 # 
 # file["svrg_opts"] = svrg_opts;
+# file["svrg_params"] = svrg_params;
 # file["svrg_obj_his"] = svrg_obj_his;
 # file["svrg_err_his"] = svrg_err_his;
 # 
-# file["params"] = params;
 # close(file)
 
 # Plot results
 # ------------------------------------------------------------------------------
 dirname = @__DIR__
 
-min_obj = (1 - 1e-5) * min([pg_obj_his; spg_obj_his; svrg_obj_his]...);
+pg_obj_his = [init_obj; pg_obj_his];
+spg_obj_his = [init_obj; spg_obj_his];
+svrg_obj_his = [init_obj; svrg_obj_his];
+min_obj = (1 - 1e-8) * min([pg_obj_his; spg_obj_his; svrg_obj_his]...);
 
-ph = plot(n * (1:length(pg_obj_his)), pg_obj_his .- min_obj, label="PG");
-plot!(tau * (1:length(spg_obj_his)), spg_obj_his .- min_obj, label="SPG")
-plot!(tau * (1:length(svrg_obj_his)), svrg_obj_his .- min_obj, label="SVRG")
+ph = plot(n * (0:length(pg_obj_his) - 1), pg_obj_his .- min_obj, label="PG");
+plot!(tau * (0:length(spg_obj_his) - 1), spg_obj_his .- min_obj, label="SPG")
+plot!(tau * (0:length(svrg_obj_his) - 1), svrg_obj_his .- min_obj, label="SVRG")
 xaxis!("number of solved subproblems")
 yaxis!("objective function",:log10)
 title!("Algorithm Comparison")
 
 #  save figure
 mkpath(dirname * "/figures")
-fname = dirname * "/figures/alg_comparison.pdf"
+fname = dirname * "/figures/alg_comparison.pdf";
 savefig(ph,fname)

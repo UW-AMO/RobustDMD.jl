@@ -21,7 +21,7 @@ function BFunc(params)
     BLAS.gemm!('N', 'N', T(1.0), params.P, params.B, T(0.0), params.R);
     params.R .-= params.X
     #
-    return params.lossFunc(view(params.R,:,params.ikeep))
+    return params.lossFunc(view(params.R, :, params.ikeep))
 end
 
 function bFunc(params, id)
@@ -70,7 +70,7 @@ function bFuncGrad(gbr, params, id)
 end
 
 
-function bfg!(ft,gbr, br,params,id)
+function bfg!(ft, gbr, br, params, id)
     copyto!(params.br[id], br);
     if ft != nothing && gbr != nothing
         return bFuncGrad(gbr, params, id);
@@ -80,7 +80,7 @@ function bfg!(ft,gbr, br,params,id)
         return
     end
     if ft != nothing && gbr == nothing
-        return bFunc(params,id)
+        return bFunc(params, id)
     end
 end
 
@@ -89,8 +89,8 @@ function projb(params, id)
     # define the function and gradient interface for optim
     #
 
-    function obfg!(f,g,x)
-        return bfg!(f,g,x,params,id)
+    function obfg!(f, g, x)
+        return bfg!(f, g, x, params, id)
     end
     
     optimfg! = Optim.only_fg!(obfg!)
@@ -181,7 +181,7 @@ function aBGrad(gar, params)
     params.R .*= params.t;
     BLAS.gemm!('T', 'N', T(1.0), params.P, params.R, T(0.0), params.tM);
     params.tM .*= params.B;
-    sum!(ga, view(params.tM,:,params.ikeep));
+    sum!(ga, view(params.tM, :, params.ikeep));
     #
     gar[1:2:end] .*= Tr(2.0);
     gar[2:2:end] .*= Tr(-2.0);
@@ -208,7 +208,7 @@ function aBFuncGrad(gar, params)
     params.R .-= params.X
     #
 
-    f = params.lossFunc(view(params.R,:,params.ikeep))    
+    f = params.lossFunc(view(params.R, :, params.ikeep))    
     
     params.lossGrad(params.R);
     #
@@ -217,7 +217,7 @@ function aBFuncGrad(gar, params)
     params.R .*= params.t;
     BLAS.gemm!('T', 'N', T(1.0), params.P, params.R, T(0.0), params.tM);
     params.tM .*= params.B;
-    sum!(ga, view(params.tM,:,params.ikeep));
+    sum!(ga, view(params.tM, :, params.ikeep));
     #
     gar[1:2:end] .*= Tr(2.0);
     gar[2:2:end] .*= Tr(-2.0);
@@ -239,31 +239,31 @@ function updateqr!(params)
         tau = qrfact.τ
 
         # prep and call factorization
-        copyto!(fact,params.P)
+        copyto!(fact, params.P)
         jpvt .= 0 # do not forget!
-        LinearAlgebra.LAPACK.geqp3!(fact,jpvt,tau)
-        copyto!(params.qra,params.a)
+        LinearAlgebra.LAPACK.geqp3!(fact, jpvt, tau)
+        copyto!(params.qra, params.a)
     end
 end
 
 
 function projbl2(params, id)
     updateqr!(params)
-    copyto!(params.qrtemp[id],params.x[id])
-    ldiv!(params.qrfact,params.qrtemp[id])
+    copyto!(params.qrtemp[id], params.x[id])
+    ldiv!(params.qrfact, params.qrtemp[id])
     k = params.k
-    copyto!(params.b[id],view(params.qrtemp[id],1:k))
+    copyto!(params.b[id], view(params.qrtemp[id], 1:k))
 end
 
 function projBl2(params)
-    if any(isinf,params.P)
+    if any(isinf, params.P)
         params.B .= 0.0
     else
         updateqr!(params)
-        copyto!(params.qrTemp,params.X)
-        ldiv!(params.qrfact,params.qrTemp)
+        copyto!(params.qrTemp, params.X)
+        ldiv!(params.qrfact, params.qrTemp)
         k = params.k
-        copyto!(params.B,view(params.qrTemp,1:k,:))
+        copyto!(params.B, view(params.qrTemp, 1:k, :))
     end
 end
 
@@ -281,7 +281,7 @@ function trimstandard(params)
     for id = 1:params.n
         params.tcnorm[id] = params.lossFunc(params.r[id])
     end
-    sortperm!(params.idsort,params.tcnorm,rev=false)
-    copyto!(params.ikeep,view(params.idsort,1:params.nkeep))
+    sortperm!(params.idsort, params.tcnorm, rev=false)
+    copyto!(params.ikeep, view(params.idsort, 1:params.nkeep))
     sort!(params.ikeep)
 end    
