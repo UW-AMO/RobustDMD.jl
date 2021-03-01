@@ -25,3 +25,10 @@ Manifest.toml
 
 # vscode
 .vscode/
+
+# emacs
+*~
+
+# project specific
+paper-examples/figures*
+paper-examples/results*
