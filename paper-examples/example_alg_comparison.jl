@@ -54,7 +54,7 @@ svrg_opts = DMD_SVRG_Options(tau, eta, itm=1000, tol=tol, true_obj=true_obj,
 
 # Get results
 # ------------------------------------------------------------------------------
-pg_obj_his, pg_err_his = solveDMD_withPG(pg_params, pg_opts);
+pg_obj_his, pg_err_his, pg_lns_his = solveDMD_withPG(pg_params, pg_opts);
 spg_obj_his, spg_err_his = solveDMD_withSPG(spg_params, spg_opts);
 svrg_obj_his, svrg_err_his = solveDMD_withSVRG(svrg_params, svrg_opts);
 
@@ -63,15 +63,16 @@ svrg_obj_his, svrg_err_his = solveDMD_withSVRG(svrg_params, svrg_opts);
 # ------------------------------------------------------------------------------
 dirname = @__DIR__
 
+pg_inds = [0; n * ((1:length(pg_obj_his)) + cumsum(pg_lns_his))];
+spg_inds = [0; tau * (1:length(spg_obj_his)) .+ n];
+svrg_inds = [0; tau * (1:length(svrg_obj_his)) .+ n];
+
 pg_obj_his = [init_obj; pg_obj_his];
 spg_obj_his = [init_obj; spg_obj_his];
 svrg_obj_his = [init_obj; svrg_obj_his];
 min_obj = (1 - 1e-8) * min([pg_obj_his; spg_obj_his; svrg_obj_his]...);
 
-spg_inds = collect(tau * (0:length(spg_obj_his) - 1) .+ n); spg_inds[1] = 0;
-svrg_inds = collect(tau * (0:length(svrg_obj_his) - 1) .+ n); svrg_inds[1] = 0;
-
-ph = plot(n * (0:length(pg_obj_his) - 1), pg_obj_his .- min_obj, label="PG");
+ph = plot(pg_inds, pg_obj_his .- min_obj, label="PG");
 plot!(spg_inds, spg_obj_his .- min_obj, label="SPG")
 plot!(svrg_inds, svrg_obj_his .- min_obj, label="SVRG")
 xaxis!("number of solved subproblems")
