@@ -46,10 +46,10 @@ tau = 20;
 eta = 5e-4;
 tol = 0.0;
 true_obj = true;
-pg_opts = DMD_PG_Options(itm=200, tol=tol, prox=prox_stab);
-spg_opts = DMD_SPG_Options(tau, eta, dms=100, itm=1000, tol=tol,
+pg_opts = DMD_PG_Options(itm=100, tol=tol, prox=prox_stab);
+spg_opts = DMD_SPG_Options(tau, eta, dms=100, itm=2000, tol=tol,
                            true_obj=true_obj, prox=prox_stab);
-svrg_opts = DMD_SVRG_Options(tau, eta, itm=1000, tol=tol, true_obj=true_obj,
+svrg_opts = DMD_SVRG_Options(tau, eta, itm=2000, tol=tol, true_obj=true_obj,
                              prox=prox_stab);
 
 # Get results
@@ -64,6 +64,7 @@ svrg_obj_his, svrg_err_his = solveDMD_withSVRG(svrg_params, svrg_opts);
 dirname = @__DIR__
 
 pg_inds = [0; n * ((1:length(pg_obj_his)) + cumsum(pg_lns_his))];
+
 spg_inds = [0; tau * (1:length(spg_obj_his)) .+ n];
 svrg_inds = [0; tau * (1:length(svrg_obj_his)) .+ n];
 
@@ -71,6 +72,13 @@ pg_obj_his = [init_obj; pg_obj_his];
 spg_obj_his = [init_obj; spg_obj_his];
 svrg_obj_his = [init_obj; svrg_obj_his];
 min_obj = (1 - 1e-8) * min([pg_obj_his; spg_obj_his; svrg_obj_his]...);
+
+maxind = maximum(spg_inds)
+
+ii = pg_inds .<= maxind
+
+pg_inds = pg_inds[ii]
+pg_obj_his = pg_obj_his[ii]
 
 ph = plot(pg_inds, pg_obj_his .- min_obj, label="PG");
 plot!(spg_inds, spg_obj_his .- min_obj, label="SPG")
