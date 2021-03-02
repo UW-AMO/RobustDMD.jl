@@ -39,9 +39,9 @@ function solveDMD_withSVRG(params, opts)
 
     fars = zeros(T, n)
     Gars = zeros(T, 2 * k, n)
-    gars = Array{typeof(view(Gars,:,1))}(undef,n)
+    gars = Array{typeof(view(Gars, :, 1))}(undef, n)
     for i = 1:n
-        gars[i] = view(Gars,:,i)
+        gars[i] = view(Gars, :, i)
     end
     
     tfar = T(0.0); tgar = zeros(T, 2 * k);
@@ -79,7 +79,7 @@ function solveDMD_withSVRG(params, opts)
     while err >= tol
 
         # random sample columns
-        sample!(ind, ind2,replace=false);
+        sample!(ind, ind2, replace=false);
         fill!(dgar, T(0.0)); dfar = T(0.0);
         for i = 1:tau
             id = ind2[i];
@@ -101,12 +101,9 @@ function solveDMD_withSVRG(params, opts)
 
         # update tfar and tgar
         if opts.true_obj
-            for id = 1:n
-                fars[id] = abFunc(params, id);
-            end
-            tfar = sum(fars);
+            tfar = BFunc(params);
         else
-            tfar  += dfar;
+            tfar += dfar;
         end
         tgar .+= dgar;
 

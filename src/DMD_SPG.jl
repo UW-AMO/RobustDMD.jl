@@ -41,9 +41,9 @@ function solveDMD_withSPG(params, opts)
 
     fars = zeros(T, n)
     Gars = zeros(T, 2 * k, n)
-    gars = Array{typeof(view(Gars,:,1))}(undef,n)
+    gars = Array{typeof(view(Gars, :, 1))}(undef, n)
     for i = 1:n
-        gars[i] = view(Gars,:,i)
+        gars[i] = view(Gars, :, i)
     end
     
     tfar = T(0.0); tgar = zeros(T, 2 * k);
@@ -95,10 +95,7 @@ function solveDMD_withSPG(params, opts)
         copyto!(arold, ar); ar .-= dar; prox(ar);
         # update tfar
         if opts.true_obj
-            for id = 1:n
-                fars[id] = abFunc(params, id);
-            end
-            tfar = sum(fars);
+            tfar = BFunc(params);
         else
             tfar  += dfar;
         end
